@@ -23,6 +23,12 @@ dependencies = [
     "msal>=1.28",
     "python-dotenv>=1.0",
     "azure-identity>=1.19",
+    # `cryptography` (a transitive dep of azure-identity) only ships prebuilt
+    # Windows ARM64 wheels for the 46.0.x line. Newer releases (47/48) fall
+    # back to a Rust source build that needs MSVC + cargo. Cap to 46.0.x on
+    # Win/ARM64 so `pip install` uses a wheel; every other platform is
+    # unconstrained and gets the latest cryptography.
+    "cryptography>=46.0.3,<47; platform_machine == 'ARM64' and sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]

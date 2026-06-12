@@ -32,7 +32,7 @@ param avatarStyle = 'casual-sitting'
 // Optional avatar background. Leave empty for transparent (Voice Live default).
 // Use either an image URL (must be public HTTPS so Voice Live can fetch it)
 // or a hex color — image takes precedence if both are set.
-// param avatarBackgroundImageUrl = 'https://<your-cdn>/background.png'
+// param avatarBackgroundImageUrl = 'https://<your-cdn>/office-background.png'
 // param avatarBackgroundColor = '#FFFFFFFF'
 param agentLanguage = 'en'
 param acrName = '<ACR_NAME>'

@@ -69,6 +69,12 @@ param agentLanguage string = 'en'
 @description('Bump to force the CSE model to rerun when durable blob URLs stay unchanged but artifact content changes.')
 param cseRevision string = '1'
 
+@description('Storage account name for per-call cost telemetry (callcosts table). Empty disables cost persistence on the sidecar. The VMSS managed identity must have Storage Table Data Contributor on this account.')
+param costStoreAccount string = ''
+
+@description('Azure Table name for per-call cost records.')
+param costStoreTable string = 'callcosts'
+
 resource vmss 'Microsoft.Compute/virtualMachineScaleSets@2024-11-01' existing = {
   name: vmssName
 }
@@ -83,7 +89,7 @@ resource avatarBootstrap 'Microsoft.Compute/virtualMachineScaleSets/extensions@2
     type: 'CustomScriptExtension'
     typeHandlerVersion: '1.10'
     autoUpgradeMinorVersion: true
-    forceUpdateTag: uniqueString(bootstrapCommand, installScriptUrl, bootstrapZipUrl, serviceFqdn, string(mediaNatStartPort), voiceLiveEndpoint, agentName, agentVersion, foundryProjectName, azureTenantId, voiceLiveApiVersion, voiceLiveVoice, avatarCharacter, avatarStyle, avatarBackgroundImageUrl, avatarBackgroundColor, agentLanguage, cseRevision)
+    forceUpdateTag: uniqueString(bootstrapCommand, installScriptUrl, bootstrapZipUrl, serviceFqdn, string(mediaNatStartPort), voiceLiveEndpoint, agentName, agentVersion, foundryProjectName, azureTenantId, voiceLiveApiVersion, voiceLiveVoice, avatarCharacter, avatarStyle, avatarBackgroundImageUrl, avatarBackgroundColor, agentLanguage, costStoreAccount, costStoreTable, cseRevision)
     settings: {
       fileUris: [
         installScriptUrl
@@ -91,7 +97,7 @@ resource avatarBootstrap 'Microsoft.Compute/virtualMachineScaleSets/extensions@2
     }
     protectedSettings: {
       managedIdentity: {}
-      commandToExecute: '${bootstrapCommand} ${bootstrapZipUrl} ${keyVaultName} ${tlsCertSecretName} "${appInsightsConnectionString}" "${serviceFqdn}" ${mediaNatStartPort} "${voiceLiveEndpoint}" "${agentName}" "${agentVersion}" "${foundryProjectName}" "${azureTenantId}" "${voiceLiveApiVersion}" "${voiceLiveVoice}" "${avatarCharacter}" "${avatarStyle}" "${agentLanguage}" "${avatarBackgroundImageUrl}" "${avatarBackgroundColor}"'
+      commandToExecute: '${bootstrapCommand} ${bootstrapZipUrl} ${keyVaultName} ${tlsCertSecretName} "${appInsightsConnectionString}" "${serviceFqdn}" ${mediaNatStartPort} "${voiceLiveEndpoint}" "${agentName}" "${agentVersion}" "${foundryProjectName}" "${azureTenantId}" "${voiceLiveApiVersion}" "${voiceLiveVoice}" "${avatarCharacter}" "${avatarStyle}" "${agentLanguage}" "${avatarBackgroundImageUrl}" "${avatarBackgroundColor}" "${costStoreAccount}" "${costStoreTable}"'
     }
   }
 }

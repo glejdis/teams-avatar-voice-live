@@ -11,11 +11,14 @@
 
 ## What you get
 
-![End-to-end architecture](docs/diagrams/architecture_view.png)
+![End-to-end architecture](docs/diagrams/architecture.png)
 
-> **Editable source:** [`architecture.drawio`](docs/diagrams/architecture.drawio)
-> (open at [app.diagrams.net](https://app.diagrams.net)).
-> See [`docs/diagrams/README.md`](docs/diagrams/README.md) for details.
+> **Editable sources:** [`architecture.excalidraw`](docs/diagrams/architecture.excalidraw)
+> (open at [aka.ms/excalidraw](https://aka.ms/excalidraw)) ·
+> [`architecture.drawio`](docs/diagrams/architecture.drawio)
+> (open at [app.diagrams.net](https://app.diagrams.net)) ·
+> [`architecture.svg`](docs/diagrams/architecture.svg) (vector, sharp at any zoom).
+> See [`docs/diagrams/README.md`](docs/diagrams/README.md) for how to regenerate.
 
 Prose walkthrough + request/response sequences: [`docs/architecture.md`](docs/architecture.md).
 
@@ -135,6 +138,7 @@ teams_avatar_voice_live/
 │
 ├── bot/               # git submodule → glejdis/my-echobot-repo (C# Graph bot + sidecar)
 ├── browser-fallback/  # ACS browser WebRTC operator UI (local dev)
+├── costboard/         # per-call cost dashboard (reads the `callcosts` Azure Table)
 ├── infra/             # Bicep: VNet, KV, VMSS, App Gateway, monitor
 ├── scripts/           # bootstrap-oidc, vmss install/push, ops (cost control)
 ├── .github/workflows/ # infra-deploy, agent-deploy, secret-rotation
@@ -146,6 +150,7 @@ teams_avatar_voice_live/
 - [`docs/architecture.md`](docs/architecture.md) — components, sequence, region notes
 - [`docs/DEPLOY.md`](docs/DEPLOY.md) — one-pager for the production VMSS rollout
 - [`docs/RUNBOOK.md`](docs/RUNBOOK.md) — day-2 ops: cost control, demo flow, troubleshooting
+- [`costboard/README.md`](costboard/README.md) — per-call cost dashboard + the `COST_STORE_*` telemetry wiring shared by every transport ([RUNBOOK §7](docs/RUNBOOK.md#7-cost-telemetry--the-costboard-dashboard))
 - [`infra/README.md`](infra/README.md) — Bicep module reference, plus targeted recipes for [recovering individual components](infra/README.md#recover-individual-components) (bastion / VMSS / orphan PIPs) after cost cleanup
 
 ## Contributing

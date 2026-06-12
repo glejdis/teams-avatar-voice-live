@@ -133,3 +133,96 @@ You want exactly **one** operator tab open per demo.
 - Application Access Policy for the bot AAD app is scoped to a single
   organiser mailbox by default — widen only if you intentionally want the
   bot able to join meetings owned by any user in the tenant.
+
+## 7. Cost telemetry & the costboard dashboard
+
+Every transport meters a call the same way through `core/cost.py` and can
+persist one **`CostRecord`** per call to an **Azure Table** (`callcosts`). The
+**`costboard/`** app reads that table and shows totals, a per-component /
+per-transport / per-persona breakdown, a runs table, and CSV export.
+
+```
+browser-fallback ─┐
+VMSS sidecar ──────┼─▶ core.cost.CostSink ─▶ Azure Table (callcosts) ─▶ costboard
+hosted-agent (opt) ┘
+```
+
+### 7.1 Turn on persistence
+
+Persistence is **opt-in** — with nothing configured, the live in-call cost
+panel still works and no rows are written. Set these (same vars drive the
+writer and the dashboard; auth precedence: connection string → key → AAD):
+
+| Var | Meaning |
+|---|---|
+| `COST_STORE_ACCOUNT` | Storage account name → `https://<acct>.table.core.windows.net` |
+| `COST_STORE_ENDPOINT` | Explicit table endpoint (overrides `ACCOUNT`) |
+| `COST_STORE_TABLE` | Table name (default `callcosts`) |
+| `COST_STORE_CONNECTION_STRING` | Full connection string (overrides AAD) |
+| `COST_STORE_KEY` | Account key (used with `ACCOUNT`/`ENDPOINT`) |
+| `COST_STORE_KIND` | Force `none` to disable even when an account is set |
+
+For Managed Identity / `az login`, the identity needs **Storage Table Data
+Contributor** on the account. The infra Bicep (`infra/main.bicep`) creates the
+table and grants that role to every principalId in **`costStorePrincipalIds`**
+(plus `deployerPrincipalId` automatically). Add the costboard identity, the
+VMSS user-assigned identity, and/or your own objectId there.
+
+### 7.2 Run the dashboard (local)
+
+```powershell
+cd costboard
+python -m venv .venv
+.\.venv\Scripts\pip install -r requirements.txt
+# point it at the table (or reuse the repo-root .env):
+$env:COST_STORE_ACCOUNT = '<storage-account>'
+.\.venv\Scripts\python app.py        # http://localhost:3100
+```
+
+Filters: month (`YYYY-MM`), transport, channel, persona, date range. CSV export
+respects the active filters. `GET /healthz` reports whether the store is wired.
+
+### 7.3 Wire the VMSS sidecar
+
+The VMSS sidecar (`bot/avatar-sidecar/`) **implements** the emitter. Because
+the sidecar deploys self-contained (the VMSS hot-patch path ships only
+`main.py` + sibling modules and cannot import the parent `core` package), it
+uses a **vendored copy** of the cost module at
+`bot/avatar-sidecar/cost_telemetry.py`. That file is a verbatim copy of
+`core/cost.py` — **keep the two in sync** whenever rates, the record schema, or
+the sink change.
+
+How it works at runtime:
+
+1. `scripts/vmss/install.ps1` forwards `COST_STORE_ACCOUNT` / `COST_STORE_TABLE`
+   into the sidecar service environment when you pass `-CostStoreAccount`
+   (wired through `infra/vmss-bootstrap-extension.bicep`). The VM also sets
+   `USE_MANAGED_IDENTITY=1` + `AZURE_TENANT_ID`, so the sink authenticates as
+   the **VMSS system-assigned managed identity**.
+2. On `/stream` connect, the sidecar starts a `CostMeter(is_teams=True)`; on
+   each `response.done` it folds in the Voice Live token usage.
+3. On disconnect it marks the meter ended, builds a `CostRecord`
+   (`transport="vmss"`, ACS rate forced to 0 — the Graph bot path has no ACS
+   leg) and `await _COST_SINK.write(record)`.
+
+The whole path is **fail-soft and opt-in**: with no `COST_STORE_*` set, or if
+`azure-data-tables` is missing, the sidecar runs normally and writes no rows.
+The VMSS MI needs **Storage Table Data Contributor** on the account (granted
+via `costStorePrincipalIds` in `infra/main.bicep`). See
+[`bot/avatar-sidecar/README.md`](../bot/avatar-sidecar/README.md#cost-telemetry)
+for the sidecar-side detail.
+
+> **Rollout note:** updating the live VMSS sidecar happens through the
+> `agent-deploy` pipeline / `scripts/vmss/push-sidecar.ps1`; pushing
+> `cost_telemetry.py` alongside `main.py`. Do **not** redeploy
+> `vmss-bootstrap-extension.bicep` against a running VMSS just to add the env
+> vars — that reruns the custom-script extension.
+
+### 7.4 What the numbers mean
+
+Rates live in `core.cost.cost_rates()` and are `COST_*`-overridable. Voice Live
+Pro audio/text and ACS are list-price-accurate; the **avatar per-minute rate is
+an estimate** (Azure renders it dynamically) and is usually the dominant line
+for Teams calls — set `COST_AVATAR_PER_MIN` to your invoiced rate for exact
+figures.
+

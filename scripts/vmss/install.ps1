@@ -66,7 +66,15 @@ param(
     [Parameter(Mandatory=$false)][string] $AvatarStyle = 'casual-sitting',
     [Parameter(Mandatory=$false)][string] $LisaLang = 'en',
     [Parameter(Mandatory=$false)][string] $AvatarBackgroundImageUrl = '',
-    [Parameter(Mandatory=$false)][string] $AvatarBackgroundColor = ''
+    [Parameter(Mandatory=$false)][string] $AvatarBackgroundColor = '',
+    # ── Cost telemetry (optional) ─────────────────────────────────────────────
+    # When $CostStoreAccount is set, the sidecar receives COST_STORE_* env vars
+    # and (once wired in the bot submodule) writes a per-call CostRecord to the
+    # Azure Table via Managed Identity. The VMSS user-assigned identity must
+    # hold "Storage Table Data Contributor" on the account — grant it by passing
+    # its principalId in main.bicep's `costStorePrincipalIds`.
+    [Parameter(Mandatory=$false)][string] $CostStoreAccount = '',
+    [Parameter(Mandatory=$false)][string] $CostStoreTable = 'callcosts'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -875,6 +883,14 @@ if (Test-Path $sidecarMain) {
     }
     if (-not [string]::IsNullOrWhiteSpace($LisaFoundryAgentVersion)) {
         $sidecarEnv['AGENT_FOUNDRY_AGENT_VERSION'] = $LisaFoundryAgentVersion
+    }
+
+    # Sidecar cost hook: forward the cost store config so core.cost.CostSink can
+    # persist a per-call record (no-op in the sidecar until the bot submodule
+    # imports core.cost — see docs/RUNBOOK.md "Cost telemetry").
+    if (-not [string]::IsNullOrWhiteSpace($CostStoreAccount)) {
+        $sidecarEnv['COST_STORE_ACCOUNT'] = $CostStoreAccount
+        $sidecarEnv['COST_STORE_TABLE']   = $CostStoreTable
     }
 
     [Environment]::SetEnvironmentVariable('AZURE_VOICELIVE_API_KEY', $null, 'Machine')

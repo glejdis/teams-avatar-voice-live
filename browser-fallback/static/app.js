@@ -64,6 +64,12 @@ const state = {
   autoJoinInFlight: false,
   autoJoinLastUrl: "",
   eventLog: [],
+  visionEnabled: false,
+  visionAutoOnShareStart: true,
+  visionMaxImageDim: 512,
+  visionPeriodicIntervalS: 0,
+  costByChannel: {},
+  costRates: null,
 };
 
 const TEAMS_REMOTE_EMPTY_GRACE_MS = 30000;
@@ -475,6 +481,69 @@ function detachTeamsRemoteParticipantMonitor(call = state.teamsCall) {
   clearTeamsRemoteEmptyTimer("monitor_detached");
 }
 
+// ---- Vision / screen-share commentary -------------------------------------
+// Lisa can comment on a screen shared in the Teams meeting. The actual capture
+// + fetch loop lives in screen-capture.js; here we just wire it to the ACS
+// call lifecycle and to a "look at my screen" voice intent.
+
+const LOOK_AT_SCREEN_INTENT_RE = /\b(?:look at|see|check|read|view|review|assess|evaluate|thoughts on|what do you think|any concerns|feedback on)\b[^.?!]*\bscreen\b/i;
+const LOOK_AT_SLIDE_INTENT_RE = /\b(?:look at|see|check|read|review|assess|evaluate|thoughts on|what do you think|any concerns|feedback on)\b[^.?!]*\b(?:slide|page|window|tab|document|diagram|architecture|design|dashboard|config)\b/i;
+let visionIntentCooldownUntil = 0;
+
+function attachLisaVisionToTeamsCall(call) {
+  if (!window.LisaVision) {
+    log("LisaVision module not loaded; screen-share commentary disabled");
+    return;
+  }
+  if (!state.visionEnabled) {
+    log("Vision is not configured server-side; screen-share commentary disabled", { event: "vision_not_configured" });
+    setPill(els.visionStatus, "Vision: not configured");
+    return;
+  }
+  if (!state.teamsClientId) {
+    log("No teamsClientId yet; cannot attach LisaVision");
+    return;
+  }
+  try {
+    window.LisaVision.attach(call, {
+      clientId: state.teamsClientId,
+      statusEl: els.visionStatus,
+      autoOnShareStart: state.visionAutoOnShareStart,
+      maxDim: state.visionMaxImageDim || 512,
+      periodicIntervalS: state.visionPeriodicIntervalS || 0,
+    });
+    if (els.visionLookBtn) els.visionLookBtn.disabled = false;
+    log("LisaVision attached to Teams call", { event: "vision_attached" });
+  } catch (err) {
+    log(`LisaVision attach failed: ${err.message}`, { event: "vision_attach_failed" });
+  }
+}
+
+function detachLisaVision() {
+  if (window.LisaVision) {
+    try { window.LisaVision.detach(); } catch (err) { log(`LisaVision detach error: ${err.message}`); }
+  }
+  if (els.visionLookBtn) els.visionLookBtn.disabled = true;
+  visionIntentCooldownUntil = 0;
+}
+
+function maybeTriggerLookAtScreenIntent(transcript) {
+  if (!state.visionEnabled || !window.LisaVision) return;
+  const text = String(transcript || "");
+  if (!LOOK_AT_SCREEN_INTENT_RE.test(text) && !LOOK_AT_SLIDE_INTENT_RE.test(text)) return;
+  const now = Date.now();
+  if (now < visionIntentCooldownUntil) return;
+  if (!window.LisaVision.hasActiveShare()) {
+    log(`Look-at-screen intent matched but no active share: "${text}"`, { event: "vision_intent_no_share" });
+    return;
+  }
+  visionIntentCooldownUntil = now + 8000;
+  log(`Look-at-screen intent matched: "${text}"`, { event: "vision_intent_match" });
+  window.LisaVision.captureAndSend("on_demand").catch(err =>
+    log(`Vision intent capture failed: ${err.message}`, { event: "vision_intent_failed" })
+  );
+}
+
 // ---- Teams-only mode -------------------------------------------------------
 // In Teams-only mode the page Lisa session is forcibly disconnected and the
 // page-mic / page-text controls are disabled. Only the Teams Lisa session is
@@ -593,8 +662,21 @@ async function loadConfig() {
   state.teamsVoiceLiveAvatarBackgroundImageUrl = config.voiceLiveAvatarBackgroundImageUrl || "";
   state.teamsAvatarChromaKeyColor = config.teamsAvatarChromaKeyColor || "#00ff00";
   state.teamsAvatarChromaEnabled = config.teamsAvatarChromaEnabled !== false;
+  state.visionEnabled = config.visionEnabled === true;
+  state.visionAutoOnShareStart = config.visionAutoOnShareStart !== false;
+  state.visionMaxImageDim = typeof config.visionMaxImageDim === "number" ? config.visionMaxImageDim : 512;
+  state.visionPeriodicIntervalS = typeof config.visionPeriodicIntervalS === "number" ? config.visionPeriodicIntervalS : 0;
+  state.costRates = config.costRates || null;
+  renderCostPanel();
+  if (window.LisaVision && els.visionStatus) window.LisaVision.setStatusElement(els.visionStatus);
+  if (els.visionLookBtn) {
+    els.visionLookBtn.disabled = true;
+    els.visionLookBtn.title = state.visionEnabled
+      ? "Have Lisa look at the screen currently being shared in the Teams meeting and comment on it."
+      : "Vision is not configured. Set AZURE_OPENAI_VISION_* env vars to enable.";
+  }
   els.instructions.value = "You are a friendly assistant. Keep answers short, natural, and spoken. Ask one question at a time.";
-  log(`Config loaded. ACS=${config.acsConfigured ? "yes" : "no"}, agent=${config.agentConfigured ? "yes" : "no"}`);
+  log(`Config loaded. ACS=${config.acsConfigured ? "yes" : "no"}, agent=${config.agentConfigured ? "yes" : "no"}, vision=${state.visionEnabled ? "yes" : "no"}`);
   if (config.latestInvite?.meeting_url) {
     log(`Latest HR invite loaded for ${config.latestInvite.candidate_name || "candidate"}`);
   }
@@ -746,7 +828,11 @@ function handleServerMessage(message) {
       log("Lisa response done");
       break;
     case "speech_started":
+      flushPagePlayback();
       log("Speech detected");
+      break;
+    case "cost_update":
+      handleCostUpdate(message.cost);
       break;
     case "session_error":
     case "error":
@@ -849,6 +935,7 @@ async function playPcmAudio(base64) {
   // session with its own playTeamsPcmAudio() that routes into the Teams bridge.
   const ctx = await ensurePlaybackContext();
   const int16 = new Int16Array(base64ToArrayBuffer(base64));
+  if (!int16.length) return;
   const float32 = new Float32Array(int16.length);
   for (let i = 0; i < int16.length; i += 1) float32[i] = int16[i] / 32768;
   const buffer = ctx.createBuffer(1, float32.length, 24000);
@@ -856,7 +943,30 @@ async function playPcmAudio(base64) {
   const source = ctx.createBufferSource();
   source.buffer = buffer;
   source.connect(ctx.destination);
-  source.start();
+  // Schedule chunks back-to-back on a running playhead so network jitter does
+  // not cause overlap (garbled) or gaps (cut-off). After any underrun, resync
+  // with an 80 ms jitter buffer. Calling source.start() with no time argument
+  // (the previous behaviour) plays every chunk at "now", which is the classic
+  // cause of choppy, stuck-sounding realtime audio.
+  const now = ctx.currentTime;
+  let startAt = state.pagePlayhead || 0;
+  if (startAt < now + 0.02) startAt = now + 0.08;
+  source.start(startAt);
+  state.pagePlayhead = startAt + buffer.duration;
+  if (!state.pageSources) state.pageSources = [];
+  state.pageSources.push(source);
+  source.onended = () => {
+    const idx = state.pageSources.indexOf(source);
+    if (idx >= 0) state.pageSources.splice(idx, 1);
+  };
+}
+
+function flushPagePlayback() {
+  // Barge-in: drop any audio already scheduled so Lisa stops instantly when the
+  // user starts speaking, instead of talking over them.
+  state.pagePlayhead = 0;
+  (state.pageSources || []).forEach((s) => { try { s.stop(); } catch (_) {} });
+  state.pageSources = [];
 }
 
 async function toggleMic() {
@@ -990,6 +1100,7 @@ async function joinTeams() {
       startTeamsAudioInputSilenceMonitor();
       await startTeamsAudioCapture();
       enableTeamsTestControl(true);
+      attachLisaVisionToTeamsCall(call);
     } else if (call.state === "InLobby") {
       els.joinBtn.disabled = true;
       setPill(els.teamsStatus, "Teams: InLobby - admit Lisa HR", "err");
@@ -1004,6 +1115,7 @@ async function joinTeams() {
       cleanupTeamsCanvas();
       disconnectTeamsLisa();
       enableTeamsTestControl(false);
+      detachLisaVision();
       exitTeamsOnlyMode("teams_disconnected");
       els.joinBtn.disabled = false;
       if (state.autoJoinEnabled) setAutoState("Auto: armed for latest HR invite", "armed");
@@ -1128,6 +1240,9 @@ function handleTeamsLisaServerMessage(message) {
     case "transcript_done":
       // Show Teams Lisa's words in transcript prefixed so it's distinguishable.
       if (message.transcript) addMessage(message.role === "assistant" ? "assistant" : message.role || "system", `[Teams] ${message.transcript}`);
+      if (message.role === "user" && message.transcript) {
+        maybeTriggerLookAtScreenIntent(message.transcript);
+      }
       break;
     case "response_created":
       log("Teams Lisa response started");
@@ -1136,7 +1251,11 @@ function handleTeamsLisaServerMessage(message) {
       log("Teams Lisa response done");
       break;
     case "speech_started":
+      flushTeamsLisaPlayback();
       log("Teams remote speech detected");
+      break;
+    case "cost_update":
+      handleCostUpdate(message.cost);
       break;
     case "session_error":
     case "error":
@@ -1212,6 +1331,7 @@ async function playTeamsLisaPcmAudio(base64) {
   if (state.teamsBridgeAudioReady || !state.teamsBridgeDest) return;
   const ctx = await ensurePlaybackContext();
   const int16 = new Int16Array(base64ToArrayBuffer(base64));
+  if (!int16.length) return;
   const float32 = new Float32Array(int16.length);
   for (let i = 0; i < int16.length; i += 1) float32[i] = int16[i] / 32768;
   const buffer = ctx.createBuffer(1, float32.length, 24000);
@@ -1219,11 +1339,29 @@ async function playTeamsLisaPcmAudio(base64) {
   const source = ctx.createBufferSource();
   source.buffer = buffer;
   source.connect(state.teamsBridgeDest);
-  source.start();
+  // Same scheduled-playhead approach as playPcmAudio so the pre-WebRTC bridge
+  // audio into Teams is gap-free under jitter.
+  const now = ctx.currentTime;
+  let startAt = state.teamsPlayhead || 0;
+  if (startAt < now + 0.02) startAt = now + 0.08;
+  source.start(startAt);
+  state.teamsPlayhead = startAt + buffer.duration;
+  if (!state.teamsSources) state.teamsSources = [];
+  state.teamsSources.push(source);
+  source.onended = () => {
+    const idx = state.teamsSources.indexOf(source);
+    if (idx >= 0) state.teamsSources.splice(idx, 1);
+  };
   if (!state.teamsPcmBridgeLogged) {
     state.teamsPcmBridgeLogged = true;
     log("Teams Lisa PCM audio streaming to Teams (pre-WebRTC)", { event: "teams_outbound_pcm_audio_ready" });
   }
+}
+
+function flushTeamsLisaPlayback() {
+  state.teamsPlayhead = 0;
+  (state.teamsSources || []).forEach((s) => { try { s.stop(); } catch (_) {} });
+  state.teamsSources = [];
 }
 
 function cleanupTeamsPeerConnection() {
@@ -1287,56 +1425,59 @@ function containRect(sourceWidth, sourceHeight, targetWidth, targetHeight) {
   };
 }
 
-function sampleCornerMatteColors(imageData) {
-  const { width, height, data } = imageData;
-  const points = [
-    [0, 0],
-    [Math.max(0, width - 1), 0],
-    [0, Math.max(0, height - 1)],
-    [Math.max(0, width - 1), Math.max(0, height - 1)],
-    [Math.floor(width / 2), 0],
-  ];
-  return points.map(([x, y]) => {
-    const offset = ((y * width) + x) * 4;
-    return { red: data[offset], green: data[offset + 1], blue: data[offset + 2], adaptive: true };
-  });
-}
-
-function applyBackgroundMatte(imageData, matteColors) {
+// Green-screen key based on GREEN DOMINANCE (green relative to the larger of
+// red/blue), with spill suppression. Keying on dominance — instead of raw
+// distance to sampled colors — avoids removing greenish skin shadows, dark
+// hair, or the avatar's dark clothing, which previously showed the background
+// through as gray smudges. Assumes a green matte (the Voice Live avatar default
+// and AVATAR_CHROMA_COLOR=#00ff00).
+function applyBackgroundMatte(imageData) {
+  const HARD = 40; // green excess above which the pixel is fully background
+  const SOFT = 12; // green excess below which the pixel is fully kept
   const pixels = imageData.data;
   for (let index = 0; index < pixels.length; index += 4) {
     const red = pixels[index];
     const green = pixels[index + 1];
     const blue = pixels[index + 2];
-    let alpha = pixels[index + 3];
-    for (const matteColor of matteColors) {
-      const redDelta = red - matteColor.red;
-      const greenDelta = green - matteColor.green;
-      const blueDelta = blue - matteColor.blue;
-      const distance = Math.sqrt((redDelta * redDelta) + (greenDelta * greenDelta) + (blueDelta * blueDelta));
-      const dominantGreen = !matteColor.adaptive && green > 95 && green - Math.max(red, blue) > 45;
-      const hardThreshold = matteColor.adaptive ? 42 : 65;
-      const softThreshold = matteColor.adaptive ? 92 : 130;
-      if (distance < softThreshold || dominantGreen) {
-        const candidateAlpha = distance < hardThreshold || dominantGreen ? 0 : Math.min(255, (distance - hardThreshold) * (255 / (softThreshold - hardThreshold)));
-        alpha = Math.min(alpha, candidateAlpha);
-      }
+    const maxRB = Math.max(red, blue);
+    const greenExcess = green - maxRB;
+    if (greenExcess >= HARD) {
+      pixels[index + 3] = 0; // strongly green -> transparent
+      continue;
     }
-    pixels[index + 3] = alpha;
+    if (greenExcess > SOFT) {
+      // Edge / spill band: feather alpha and de-spill the green tint.
+      const t = (greenExcess - SOFT) / (HARD - SOFT); // 0..1
+      pixels[index + 3] = Math.min(pixels[index + 3], Math.round(255 * (1 - t)));
+      pixels[index + 1] = maxRB;
+    } else if (green > maxRB) {
+      // Mild green cast on a kept pixel -> suppress spill only.
+      pixels[index + 1] = maxRB;
+    }
   }
 }
 
 function loadTeamsAvatarBackgroundImage() {
   if (state.teamsAvatarBackgroundImage) return Promise.resolve(state.teamsAvatarBackgroundImage);
-  return new Promise((resolve, reject) => {
+  const primary = state.teamsAvatarBackgroundImageUrl || "/background.png";
+  const tryLoad = (url) => new Promise((resolve, reject) => {
     const image = new Image();
-    image.onload = () => {
-      state.teamsAvatarBackgroundImage = image;
-      resolve(image);
-    };
-    image.onerror = () => reject(new Error(`could not load ${state.teamsAvatarBackgroundImageUrl}`));
-    image.src = state.teamsAvatarBackgroundImageUrl;
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`could not load ${url}`));
+    image.src = url;
   });
+  return tryLoad(primary)
+    .catch((error) => {
+      if (primary !== "/background.png") {
+        log(`Avatar background ${primary} failed (${error.message}); falling back to /background.png`, { event: "teams_avatar_background_fallback" });
+        return tryLoad("/background.png");
+      }
+      throw error;
+    })
+    .then((image) => {
+      state.teamsAvatarBackgroundImage = image;
+      return image;
+    });
 }
 
 
@@ -1347,8 +1488,13 @@ async function startTeamsAvatarVideo() {
   canvas.height = 540;
   const context = canvas.getContext("2d");
   const avatarCanvas = document.createElement("canvas");
-  avatarCanvas.width = canvas.width;
-  avatarCanvas.height = canvas.height;
+  // Matte/keying is processed at reduced resolution. getImageData() (a GPU->CPU
+  // readback), the per-pixel JS matte loop, and putImageData() are the main-thread
+  // hot spot; at 960x540 @ 25fps they starve both the avatar video decode and the
+  // PCM audio scheduler, which is what makes the avatar "stick". 480x270 (~130k px)
+  // is ~4x cheaper and is scaled back up to the 960x540 output when composited.
+  avatarCanvas.width = 480;
+  avatarCanvas.height = 270;
   const avatarContext = avatarCanvas.getContext("2d", { willReadFrequently: true });
   const video = document.createElement("video");
   video.muted = true;
@@ -1370,27 +1516,43 @@ async function startTeamsAvatarVideo() {
     log("Avatar background removal is unavailable; compositing background image behind the unkeyed avatar video", { event: "teams_avatar_chroma_unavailable" });
   }
   state.teamsCanvasEls = { canvas, avatarCanvas, video };
+  // When the user is ALSO screen-sharing in the meeting, the browser must decode
+  // an extra high-res share stream and the vision watcher captures frames from
+  // it, both competing with this matte loop for the main thread -> the avatar
+  // stutters and "sticks". The expensive part here is the getImageData ->
+  // per-pixel matte -> putImageData readback. While a share is active we recompute
+  // the matte at half rate (~12fps) and re-composite the previously keyed
+  // avatarCanvas on the skipped ticks (a cheap drawImage, no readback). The
+  // background is still redrawn every tick so it stays smooth.
+  let matteTick = 0;
   state.teamsCanvasInterval = setInterval(() => {
     if (backgroundImage) {
       drawImageCover(context, backgroundImage, canvas.width, canvas.height);
     } else {
-      context.fillStyle = "white";
+      context.fillStyle = "#101820";
       context.fillRect(0, 0, canvas.width, canvas.height);
     }
     if (!video.videoWidth || !video.videoHeight || video.readyState < 2) return;
     const vw = video.videoWidth || canvas.width;
     const vh = video.videoHeight || canvas.height;
-    const rect = containRect(vw, vh, canvas.width, canvas.height);
     if (useLocalMatte) {
-      avatarContext.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height);
-      avatarContext.drawImage(video, rect.x, rect.y, rect.width, rect.height);
-      const frame = avatarContext.getImageData(0, 0, avatarCanvas.width, avatarCanvas.height);
-      applyBackgroundMatte(frame, [chromaKey, ...sampleCornerMatteColors(frame)]);
-      avatarContext.putImageData(frame, 0, 0);
-      context.drawImage(avatarCanvas, 0, 0);
+      const sharing = !!(window.LisaVision && typeof window.LisaVision.hasActiveShare === "function" && window.LisaVision.hasActiveShare());
+      const recompute = !sharing || (matteTick % 2 === 0);
+      if (recompute) {
+        const mrect = containRect(vw, vh, avatarCanvas.width, avatarCanvas.height);
+        avatarContext.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height);
+        avatarContext.drawImage(video, mrect.x, mrect.y, mrect.width, mrect.height);
+        const frame = avatarContext.getImageData(0, 0, avatarCanvas.width, avatarCanvas.height);
+        applyBackgroundMatte(frame);
+        avatarContext.putImageData(frame, 0, 0);
+      }
+      // Composite the (possibly cached) keyed avatar over the fresh background.
+      context.drawImage(avatarCanvas, 0, 0, canvas.width, canvas.height);
     } else {
+      const rect = containRect(vw, vh, canvas.width, canvas.height);
       context.drawImage(video, rect.x, rect.y, rect.width, rect.height);
     }
+    matteTick++;
   }, 40);
   const { LocalVideoStream } = AzureCommunicationCalling;
   state.teamsLocalVideoStream = new LocalVideoStream(canvas.captureStream(25));
@@ -1458,6 +1620,7 @@ async function leaveTeams() {
   stopTeamsAudioInputSilenceMonitor();
   cleanupTeamsCanvas();
   cleanupTeamsIncomingAudio();
+  detachLisaVision();
   if (state.teamsCall) await state.teamsCall.hangUp({ forEveryone: false }).catch(() => {});
   state.teamsCall = null;
   cleanupTeamsBridge();
@@ -1514,6 +1677,103 @@ function downloadOperatorLog() {
   log("Operator log downloaded", { event: "operator_log_downloaded" });
 }
 
+// ---- Estimated call cost panel ---------------------------------------------
+// Server pushes {type:"cost_update", cost:{channel, totalUsd, elapsedSeconds,
+// ended, components:{realtime, avatar, vision, acs}}} every ~2s per active
+// session (page + teams are separate channels). We merge channels and render a
+// combined estimate.
+
+function handleCostUpdate(cost) {
+  if (!cost || !cost.channel) return;
+  state.costByChannel[cost.channel] = cost;
+  renderCostPanel();
+}
+
+function formatUsd(n) {
+  const v = Number(n) || 0;
+  if (v > 0 && v < 0.0001) return "<$0.0001";
+  return "$" + v.toFixed(4);
+}
+
+function formatTokens(n) {
+  const v = Math.round(Number(n) || 0);
+  if (v >= 10000) return Math.round(v / 1000) + "k";
+  if (v >= 1000) return (v / 1000).toFixed(1) + "k";
+  return String(v);
+}
+
+function formatMinsFromMinutes(mins) {
+  const totalSec = Math.max(0, Math.round((Number(mins) || 0) * 60));
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function renderCostPanel() {
+  if (!els.costGrid || !els.costTotal) return;
+  const channels = Object.values(state.costByChannel);
+
+  const sums = {
+    total: 0,
+    elapsedSec: 0,
+    realtime: { cost: 0, tokens: 0 },
+    avatar: { cost: 0, minutes: 0 },
+    vision: { cost: 0, calls: 0, tokens: 0 },
+    acs: { cost: 0, minutes: 0, applicable: false },
+  };
+
+  for (const c of channels) {
+    sums.total += Number(c.totalUsd) || 0;
+    sums.elapsedSec = Math.max(sums.elapsedSec, Number(c.elapsedSeconds) || 0);
+    const comp = c.components || {};
+    if (comp.realtime) {
+      sums.realtime.cost += Number(comp.realtime.costUsd) || 0;
+      sums.realtime.tokens += (comp.realtime.audioInTokens || 0) + (comp.realtime.audioOutTokens || 0)
+        + (comp.realtime.textInTokens || 0) + (comp.realtime.textOutTokens || 0);
+    }
+    if (comp.avatar) {
+      sums.avatar.cost += Number(comp.avatar.costUsd) || 0;
+      sums.avatar.minutes = Math.max(sums.avatar.minutes, Number(comp.avatar.minutes) || 0);
+    }
+    if (comp.vision) {
+      sums.vision.cost += Number(comp.vision.costUsd) || 0;
+      sums.vision.calls += comp.vision.calls || 0;
+      sums.vision.tokens += (comp.vision.inTokens || 0) + (comp.vision.outTokens || 0);
+    }
+    if (comp.acs) {
+      sums.acs.cost += Number(comp.acs.costUsd) || 0;
+      if (comp.acs.applicable) {
+        sums.acs.applicable = true;
+        sums.acs.minutes = Math.max(sums.acs.minutes, Number(comp.acs.minutes) || 0);
+      }
+    }
+  }
+
+  const rows = [
+    { label: "Voice Live realtime", value: sums.realtime.cost, detail: `${formatTokens(sums.realtime.tokens)} tokens`, dim: false },
+    { label: "Avatar video", value: sums.avatar.cost, detail: `${formatMinsFromMinutes(sums.avatar.minutes)} streamed`, dim: false },
+    { label: "Vision LLM", value: sums.vision.cost, detail: `${sums.vision.calls} call(s) \u00b7 ${formatTokens(sums.vision.tokens)} tok`, dim: sums.vision.calls === 0 },
+    { label: "ACS / Teams", value: sums.acs.cost, detail: sums.acs.applicable ? `${formatMinsFromMinutes(sums.acs.minutes)} in call` : "no Teams call", dim: !sums.acs.applicable },
+  ];
+
+  els.costGrid.innerHTML = rows.map(r => `
+    <div class="cost-row${r.dim ? " dim" : ""}">
+      <span class="cost-label">${r.label}</span>
+      <span class="cost-value">${formatUsd(r.value)}</span>
+      <span class="cost-detail">${r.detail}</span>
+    </div>`).join("");
+
+  els.costTotal.textContent = formatUsd(sums.total);
+
+  if (els.costElapsed) {
+    const anyActive = channels.some(c => !c.ended);
+    els.costElapsed.textContent = channels.length
+      ? `${formatMinsFromMinutes(sums.elapsedSec / 60)} elapsed${anyActive ? "" : " (ended)"}`
+      : "idle";
+  }
+  if (els.costPanel) els.costPanel.classList.toggle("empty", channels.length === 0);
+}
+
 function bindUi() {
   Object.assign(els, {
     voiceStatus: $("voice-status"),
@@ -1546,6 +1806,12 @@ function bindUi() {
     transcript: $("transcript"),
     avatarVideo: $("avatar-video"),
     avatarPane: document.querySelector(".avatar-pane"),
+    visionStatus: $("vision-status"),
+    visionLookBtn: $("vision-look-btn"),
+    costPanel: $("cost-panel"),
+    costTotal: $("cost-total"),
+    costGrid: $("cost-grid"),
+    costElapsed: $("cost-elapsed"),
   });
   els.teamsLink.addEventListener("input", () => { state.teamsLinkTouched = true; });
   els.autoJoin.addEventListener("change", async () => {
@@ -1575,6 +1841,12 @@ function bindUi() {
   els.textInput.addEventListener("keydown", event => { if (event.key === "Enter") sendTextTurn(); });
   if (els.teamsTestBtn) els.teamsTestBtn.addEventListener("click", sendTeamsTestText);
   if (els.teamsTestInput) els.teamsTestInput.addEventListener("keydown", event => { if (event.key === "Enter") sendTeamsTestText(); });
+  if (els.visionLookBtn) {
+    els.visionLookBtn.addEventListener("click", () => {
+      if (!window.LisaVision) { log("LisaVision not loaded"); return; }
+      window.LisaVision.captureAndSend("on_demand").catch(err => log(`Vision look failed: ${err.message}`));
+    });
+  }
 }
 
 window.addEventListener("DOMContentLoaded", async () => {

@@ -65,6 +65,85 @@ h1 { margin: 8px 0 0; font-size: 28px; }
   flex: 1;
 }
 
+.cost-panel {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.cost-panel.empty { opacity: .75; }
+
+.cost-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.cost-title { font-weight: 600; color: var(--text); }
+
+.cost-total {
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--red);
+}
+
+.cost-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.cost-row {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fafbfc;
+}
+
+.cost-row .cost-label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.cost-row .cost-value {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.cost-row .cost-detail {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.cost-row.dim { opacity: .55; }
+
+.cost-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cost-foot code {
+  background: #eef1f4;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
 .avatar-pane {
   position: relative;
   min-height: 420px;
@@ -200,6 +279,18 @@ textarea { resize: vertical; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .button-row, .text-row { display: flex; gap: 8px; margin: 12px 0; }
 .text-row input { flex: 1; }
+.vision-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.vision-row button { white-space: nowrap; }
+.vision-hint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
 button {
   border: 1px solid var(--blue);
   background: var(--blue);

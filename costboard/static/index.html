@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>costboard — call cost analytics</title>
+  <style>
+    :root {
+      --bg: #f5f6f7;
+      --panel: #ffffff;
+      --line: #d8dde3;
+      --text: #1d252c;
+      --muted: #60707e;
+      --red: #cc071e;
+      --green: #007c4c;
+      --blue: #1d4f91;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+    header {
+      padding: 18px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    header h1 { font-size: 18px; margin: 0; }
+    header .sub { color: var(--muted); font-size: 12px; }
+    main { padding: 20px 24px; max-width: 1320px; margin: 0 auto; }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+      margin-bottom: 18px;
+    }
+    .filters label {
+      display: flex;
+      flex-direction: column;
+      font-size: 11px;
+      color: var(--muted);
+      gap: 3px;
+    }
+    .filters input, .filters select {
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      font-size: 13px;
+      min-width: 120px;
+    }
+    button {
+      padding: 7px 14px;
+      border: 1px solid var(--blue);
+      border-radius: 6px;
+      background: var(--blue);
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    button.secondary { background: var(--panel); color: var(--blue); }
+    .cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    .card {
+      flex: 1 1 160px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .card .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .card .v { font-size: 22px; font-weight: 600; margin-top: 4px; }
+    .card .v.usd { color: var(--green); }
+    .split { display: flex; gap: 16px; flex-wrap: wrap; }
+    .split > section {
+      flex: 1 1 320px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    section h2 { font-size: 13px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .usd { color: var(--green); font-variant-numeric: tabular-nums; }
+    .pill {
+      display: inline-block; padding: 1px 8px; border-radius: 999px;
+      background: #eef1f4; color: var(--blue); font-size: 11px;
+    }
+    .bar { height: 8px; background: #eef1f4; border-radius: 4px; overflow: hidden; }
+    .bar > span { display: block; height: 100%; background: var(--blue); }
+    .runs-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-top: 16px; overflow-x: auto; }
+    .empty { color: var(--muted); padding: 24px; text-align: center; }
+    .muted { color: var(--muted); }
+    a { color: var(--blue); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>costboard</h1>
+    <span class="sub">per-call cost analytics · Voice Live · avatar · vision · ACS</span>
+  </header>
+  <main>
+    <div class="filters">
+      <label>Month (YYYY-MM)<input id="f-month" placeholder="2026-06" /></label>
+      <label>Transport
+        <select id="f-transport">
+          <option value="">all</option>
+          <option value="browser">browser</option>
+          <option value="vmss">vmss</option>
+          <option value="hosted-agent">hosted-agent</option>
+        </select>
+      </label>
+      <label>Channel
+        <select id="f-channel">
+          <option value="">all</option>
+          <option value="teams">teams</option>
+          <option value="page">page</option>
+        </select>
+      </label>
+      <label>Persona<input id="f-persona" placeholder="lisa" /></label>
+      <label>From<input id="f-from" type="date" /></label>
+      <label>To<input id="f-to" type="date" /></label>
+      <button id="apply">Apply</button>
+      <button class="secondary" id="reset">Reset</button>
+      <button class="secondary" id="csv">Export CSV</button>
+    </div>
+
+    <div class="cards" id="cards"></div>
+
+    <div class="split">
+      <section>
+        <h2>Cost by component</h2>
+        <div id="components"></div>
+      </section>
+      <section>
+        <h2>Cost by transport</h2>
+        <div id="byTransport"></div>
+      </section>
+      <section>
+        <h2>Cost by persona</h2>
+        <div id="byPersona"></div>
+      </section>
+    </div>
+
+    <div class="runs-wrap">
+      <h2 style="margin-top:0">Runs</h2>
+      <div id="runs"></div>
+    </div>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const usd = (n) => "$" + Number(n || 0).toFixed(4);
+    const secs = (n) => {
+      const s = Math.round(Number(n || 0));
+      const m = Math.floor(s / 60);
+      return m + "m " + String(s % 60).padStart(2, "0") + "s";
+    };
+
+    function params() {
+      const p = new URLSearchParams();
+      const month = $("f-month").value.trim();
+      const transport = $("f-transport").value;
+      const channel = $("f-channel").value;
+      const persona = $("f-persona").value.trim();
+      const from = $("f-from").value;
+      const to = $("f-to").value;
+      if (month) p.set("month", month);
+      if (transport) p.set("transport", transport);
+      if (channel) p.set("channel", channel);
+      if (persona) p.set("persona", persona);
+      if (from) p.set("from", from + "T00:00:00+00:00");
+      if (to) p.set("to", to + "T23:59:59+00:00");
+      return p;
+    }
+
+    function bars(obj) {
+      const entries = Object.entries(obj || {})
+        .map(([k, v]) => [k, typeof v === "object" ? v.totalUsd : v])
+        .sort((a, b) => b[1] - a[1]);
+      const max = Math.max(1e-9, ...entries.map((e) => e[1]));
+      if (!entries.length) return '<div class="muted">No data.</div>';
+      return entries.map(([k, v]) => `
+        <div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between">
+            <span>${k}</span><span class="usd">${usd(v)}</span>
+          </div>
+          <div class="bar"><span style="width:${(v / max * 100).toFixed(1)}%"></span></div>
+        </div>`).join("");
+    }
+
+    async function load() {
+      const p = params();
+      $("csv").onclick = () => { window.location = "/export.csv?" + p.toString(); };
+      let summary, data;
+      try {
+        [summary, data] = await Promise.all([
+          fetch("/api/summary?" + p.toString()).then((r) => r.json()),
+          fetch("/api/runs?" + p.toString()).then((r) => r.json()),
+        ]);
+      } catch (e) {
+        $("runs").innerHTML = '<div class="empty">Failed to load. Is the cost store configured?</div>';
+        return;
+      }
+
+      $("cards").innerHTML = [
+        ["Total cost", usd(summary.totalUsd), "usd"],
+        ["Calls", summary.count, ""],
+        ["Avg / call", usd(summary.avgUsd), "usd"],
+        ["Total minutes", (summary.totalMinutes || 0).toFixed(1), ""],
+      ].map(([k, v, cls]) => `
+        <div class="card"><div class="k">${k}</div><div class="v ${cls}">${v}</div></div>
+      `).join("");
+
+      $("components").innerHTML = bars(summary.components);
+      $("byTransport").innerHTML = bars(summary.byTransport);
+      $("byPersona").innerHTML = bars(summary.byPersona);
+
+      const runs = data.runs || [];
+      if (!runs.length) {
+        $("runs").innerHTML = '<div class="empty">No runs match. New calls appear here when the cost store (COST_STORE_*) is configured.</div>';
+        return;
+      }
+      const rows = runs.map((r) => `
+        <tr>
+          <td>${(r.startedAt || "").replace("T", " ").slice(0, 19)}</td>
+          <td><span class="pill">${r.transport || "—"}</span></td>
+          <td>${r.channel || "—"}</td>
+          <td>${r.persona || "—"}</td>
+          <td>${r.model || "—"}</td>
+          <td class="num">${secs(r.elapsedSeconds)}</td>
+          <td class="num usd">${usd(r.realtimeUsd)}</td>
+          <td class="num usd">${usd(r.avatarUsd)}</td>
+          <td class="num usd">${usd(r.visionUsd)}</td>
+          <td class="num usd">${usd(r.acsUsd)}</td>
+          <td class="num usd"><b>${usd(r.totalUsd)}</b></td>
+        </tr>`).join("");
+      $("runs").innerHTML = `
+        <table>
+          <thead><tr>
+            <th>Started (UTC)</th><th>Transport</th><th>Channel</th><th>Persona</th>
+            <th>Model</th><th class="num">Duration</th>
+            <th class="num">Realtime</th><th class="num">Avatar</th>
+            <th class="num">Vision</th><th class="num">ACS</th><th class="num">Total</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    $("apply").onclick = load;
+    $("reset").onclick = () => {
+      ["f-month", "f-persona", "f-from", "f-to"].forEach((id) => ($(id).value = ""));
+      $("f-transport").value = "";
+      $("f-channel").value = "";
+      load();
+    };
+    load();
+  </script>
+</body>
+</html>

@@ -74,7 +74,86 @@ that ship are tuned for the **Lisa** persona shipped in
 | `AVATAR_CHARACTER` / `AVATAR_STYLE` | `lisa` / `casual-sitting` | The avatar character and pose. See the [Microsoft avatar catalog](https://learn.microsoft.com/azure/ai-services/speech-service/text-to-speech-avatar/avatar-gestures-with-ssml). |
 | `AVATAR_BACKGROUND_IMAGE_URL` | _empty_ | Public HTTPS URL the Voice Live service fetches server-side and uses as the avatar background. Image takes precedence over color. |
 | `AVATAR_BACKGROUND_COLOR` | _empty_ | Hex color (e.g. `"#FFFFFFFF"`) used when no image URL is set. Empty = Voice Live default (transparent). |
-| `AVATAR_CHROMA_ENABLED` / `AVATAR_CHROMA_COLOR` / `TEAMS_AVATAR_BACKGROUND_IMAGE` | `true` / `#00ff00` / `/background.png` | Client-side canvas chroma-key overlay. The page draws the local background image behind the green-screened avatar in the browser — independent of the server-side `AVATAR_BACKGROUND_*` settings above. |
+| `AVATAR_CHROMA_ENABLED` / `AVATAR_CHROMA_COLOR` / `TEAMS_AVATAR_BACKGROUND_IMAGE` | `true` / `#00ff00` / `/office-background.png` | Client-side canvas chroma-key overlay. The page draws the local background image behind the green-screened avatar in the browser — independent of the server-side `AVATAR_BACKGROUND_*` settings above. |
+
+## Letting Lisa see a shared screen
+
+When this is enabled, Lisa can look at and comment on a screen that the other
+participant is sharing in the Teams meeting. Voice Live itself does not accept
+video input, so the browser-fallback server captures one JPEG frame from the
+remote screen-share stream, calls a multimodal Azure OpenAI deployment for a
+short description, and injects that description as a synthetic user turn into
+Lisa's running Voice Live session — Lisa then speaks the comment through the
+avatar.
+
+### Setup (~2 minutes)
+
+By default we reuse the same Foundry / Azure OpenAI resource Lisa already
+runs against. `gpt-4.1-mini` is multimodal, so no extra deployment is needed.
+Auth uses `DefaultAzureCredential` (i.e. `az login`) like the rest of this
+package.
+
+Add (or uncomment) the following in `browser-fallback/.env`:
+
+```bash
+# Optional: explicit endpoint. Leave empty to derive from AZURE_VOICELIVE_ENDPOINT.
+# AZURE_OPENAI_VISION_ENDPOINT=https://<FOUNDRY_ACCOUNT_NAME>.openai.azure.com
+AZURE_OPENAI_VISION_DEPLOYMENT=gpt-4.1-mini
+AZURE_OPENAI_VISION_API_VERSION=2024-12-01-preview
+# Optional: API key instead of AAD.
+# AZURE_OPENAI_VISION_API_KEY=
+
+VISION_AUTO_ON_SHARE_START=true   # Lisa comments once when a new share begins
+VISION_PERIODIC_INTERVAL_S=0      # No periodic loop in the POC
+VISION_MAX_IMAGE_DIM=512          # Downsample longest edge before sending
+```
+
+Restart `python app.py`. `GET /api/config` should return `"visionEnabled": true`.
+
+### Triggers
+
+| Trigger | When it fires |
+|---|---|
+| `share_start` | Once when a new remote screen-share stream is detected (auto, controlled by `VISION_AUTO_ON_SHARE_START`). |
+| `on_demand` (button) | Operator clicks **Show Lisa my screen** in the controls panel. |
+| `on_demand` (voice) | The candidate says something matching "look at / see / check / read / view … screen / slide / page / window / tab / document". 8-second cooldown so repeated mentions don't double-fire. |
+
+Periodic capture (`VISION_PERIODIC_INTERVAL_S > 0`) is intentionally **off** in
+the POC — without a perceptual-hash gate it spends tokens narrating unchanged
+slides. Build that gate before turning it on.
+
+### What it looks like in the UI
+
+A new pill in the status strip shows `Vision: idle | watching | share active | thinking | spoke | error`.
+A new button **Show Lisa my screen** is enabled while a Teams call is connected
+and a share is active.
+
+### Privacy notes
+
+- Captured frames are kept in memory only, keyed by the Teams Voice Live
+  session id, and cleared when that session ends. They are never persisted to
+  disk.
+- The vision call goes to **your** Azure OpenAI resource — no third parties.
+- The system prompt instructs Lisa to **summarize** rather than read URLs,
+  email addresses, phone numbers, or long numbers verbatim. Tune the prompt
+  in `vision.py` (`_DEFAULT_SYSTEM_PROMPT`) if your scenario needs stricter
+  rules.
+- If you ship this beyond a POC, declare it in the persona's opening line —
+  e.g. _"By the way, I'll be able to see your screen if you share it during
+  this session."_
+
+### Endpoints (for debugging)
+
+| Method · path | Purpose |
+|---|---|
+| `POST /api/vision/screen-frame` | Body: `{ clientId, jpegBase64, trigger }`. Stores the frame and, unless `trigger === "buffer_only"`, runs the vision call and pushes Lisa's spoken comment. Returns `{ ok, stored, spoke, description, reason? }`. |
+| `GET /api/vision/latest-frame?client_id=…` | Returns the most recent JPEG buffered for that client. Handy for diagnosing "why didn't Lisa say anything?". |
+
+### Known limitations
+
+- No multi-presenter handoff beyond what ACS emits as fresh `videoStreamsUpdated` events.
+- Vision round-trip is ~1.5–3s. Lisa pauses noticeably between the cue and her spoken comment — the `Vision: thinking` pill makes this visible to the operator.
+- Some tenants block ACS guests from receiving screen-share content entirely. If you see `Vision: no share` while a Teams participant is clearly sharing, that's the likely cause — switch to the `graph_bot` transport (which is a first-class Teams participant).
 
 ## Operational notes
 

@@ -29,13 +29,22 @@ import json
 import logging
 import math
 import os
+import pathlib
 import sys
 from datetime import datetime, timezone
 from typing import Sequence
 
+from dotenv import load_dotenv
+
 from . import bot_dispatcher, graph_client
 
 logger = logging.getLogger("launcher")
+
+# Load the project-root .env so the documented `cp .env.example .env` workflow
+# works out of the box. `override=False` keeps real environment variables
+# (e.g. those injected by CI or a service host) authoritative.
+load_dotenv(pathlib.Path(__file__).resolve().parent.parent / ".env", override=False)
+load_dotenv(override=False)  # also honour a .env in the current working directory
 
 
 def _configure_logging(verbose: bool) -> None:

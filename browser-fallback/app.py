@@ -6,17 +6,26 @@ from contextlib import suppress
 import json
 import logging
 import os
+import time
+import uuid
 from pathlib import Path
 from typing import Any, Optional
 from datetime import datetime, timezone
 import urllib.error
 import urllib.request
 
-from azure.ai.voicelive.aio import AgentSessionConfig, connect
+from azure.ai.voicelive.aio import connect
+
+try:  # `AgentSessionConfig` (aio) was renamed to `AgentConfig` (models) in stable 1.2.0+
+    from azure.ai.voicelive.aio import AgentSessionConfig
+except ImportError:  # pragma: no cover - depends on installed SDK build
+    from azure.ai.voicelive.models import AgentConfig as AgentSessionConfig
+
 from azure.ai.voicelive.aio._patch import ConnectionClosed
 from azure.ai.voicelive.models import (
     AudioInputTranscriptionOptions,
     AvatarConfig,
+    AzureSemanticVad,
     AzureStandardVoice,
     Background,
     ClientEventSessionAvatarConnect,
@@ -36,12 +45,32 @@ from azure.identity.aio import AzureCliCredential, DefaultAzureCredential
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
+
+import sys
+
+import vision
 
 ROOT = Path(__file__).resolve().parent
 REPO_ROOT = ROOT.parent
 STATIC_DIR = ROOT / "static"
 DATA_DIR = ROOT / "data"
+
+# Make the repo-root `core` package importable when running `python app.py`
+# from inside browser-fallback/ (cwd is the sub-app, not the repo root).
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from core.cost import (  # noqa: E402  (path shim must run first)
+    CostMeter,
+    CostRecord,
+    build_sink_from_env,
+    cost_rates,
+)
+
+# Back-compat alias: the rest of this module calls `_cost_rates()`.
+_cost_rates = cost_rates
 
 load_dotenv(REPO_ROOT / ".env", override=False)
 load_dotenv(ROOT / ".env", override=True)
@@ -254,13 +283,34 @@ def _build_credential():
     return DefaultAzureCredential()
 
 
+def _normalize_hex_color(value: str) -> str:
+    """Voice Live's Background(color=...) requires 8-digit #RRGGBBAA. The client
+    sends a 6-digit chroma color (e.g. #00ff00); without the alpha byte the
+    service silently ignores it and falls back to its default avatar background,
+    which the client-side green matte then cannot key out. Expand shorter forms
+    to #RRGGBBAA so the requested color actually takes effect."""
+    color = (value or "").strip()
+    if not color:
+        return ""
+    if not color.startswith("#"):
+        color = "#" + color
+    hexpart = color[1:]
+    if len(hexpart) == 3:  # #RGB -> #RRGGBBFF
+        hexpart = "".join(ch * 2 for ch in hexpart) + "FF"
+    elif len(hexpart) == 6:  # #RRGGBB -> #RRGGBBFF
+        hexpart = hexpart + "FF"
+    elif len(hexpart) != 8:
+        return color  # leave anything unexpected untouched
+    return "#" + hexpart.upper()
+
+
 def _build_avatar_config(config: dict[str, Any]) -> AvatarConfig:
     width = int(config.get("avatarWidth") or os.getenv("AVATAR_VIDEO_WIDTH", "1280"))
     height = int(config.get("avatarHeight") or os.getenv("AVATAR_VIDEO_HEIGHT", "720"))
     bitrate = int(config.get("avatarBitrate") or os.getenv("AVATAR_VIDEO_BITRATE", "1500000"))
     gop_size = int(config.get("avatarGopSize") or os.getenv("AVATAR_VIDEO_GOP_SIZE", "30"))
     background_image_url = str(config.get("avatarBackgroundImageUrl") or os.getenv("AVATAR_BACKGROUND_IMAGE_URL", "")).strip()
-    background_color = str(config.get("avatarBackgroundColor") or "").strip()
+    background_color = _normalize_hex_color(str(config.get("avatarBackgroundColor") or os.getenv("AVATAR_BACKGROUND_COLOR", "")))
     if background_image_url:
         avatar_background = Background(image_url=background_image_url)
     elif background_color:
@@ -288,7 +338,9 @@ def _build_avatar_config(config: dict[str, Any]) -> AvatarConfig:
 
 def _build_session(config: dict[str, Any], *, agent_mode: bool) -> RequestSession:
     voice_name = str(config.get("voice") or os.getenv("AZURE_VOICELIVE_VOICE", DEFAULT_VOICE))
-    turn_detection = ServerVad(
+    # Voice Live requires a semantic VAD when input_audio_transcription uses
+    # azure-speech; ServerVad is rejected with invalid_request_error.
+    turn_detection = AzureSemanticVad(
         threshold=float(config.get("vadThreshold") or os.getenv("VOICELIVE_VAD_THRESHOLD", "0.5")),
         prefix_padding_ms=int(config.get("vadPrefixPaddingMs") or os.getenv("VOICELIVE_VAD_PREFIX_PADDING_MS", "150")),
         silence_duration_ms=int(config.get("vadSilenceDurationMs") or os.getenv("VOICELIVE_VAD_SILENCE_DURATION_MS", "350")),
@@ -333,6 +385,10 @@ class VoiceSession:
         self.task: Optional[asyncio.Task] = None
         self.credential = None
         self.is_teams_session = client_id.endswith("--teams")
+        self.cost = CostMeter(is_teams=self.is_teams_session)
+        self.cost_task: Optional[asyncio.Task] = None
+        self.run_id = uuid.uuid4().hex
+        self.cost_started_iso = _iso_now()
         self.candidate_id = str(config.get("candidateId") or config.get("candidate_id") or "").strip()
         self.candidate_name = str(config.get("candidateName") or config.get("candidate_name") or "").strip() or "Applicant"
         self.transcript_started_at = _iso_now()
@@ -371,6 +427,9 @@ class VoiceSession:
             async with connect(**connect_kwargs) as connection:
                 self.connection = connection
                 await connection.session.update(session=_build_session(self.config, agent_mode=agent_mode))
+                self.cost.reset_clock()
+                self.cost_started_iso = _iso_now()
+                self.cost_task = asyncio.create_task(self._cost_loop())
                 await self._event_loop(connection, model=model, agent_mode=agent_mode)
         except asyncio.CancelledError:
             raise
@@ -382,6 +441,13 @@ class VoiceSession:
         finally:
             self.running = False
             self.connection = None
+            self.cost.mark_ended()
+            if self.cost_task and not self.cost_task.done():
+                self.cost_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await self.cost_task
+            await self.send({"type": "cost_update", "cost": self.cost.snapshot(_cost_rates())})
+            await self._persist_cost_record(model=model)
             if active_sessions.get(self.client_id) is self:
                 active_sessions.pop(self.client_id, None)
             if self.credential is not None and hasattr(self.credential, "close"):
@@ -406,6 +472,49 @@ class VoiceSession:
         if not self.connection or not audio_base64:
             return
         await self.connection.input_audio_buffer.append(audio=audio_base64)
+
+    async def _cost_loop(self) -> None:
+        """Periodically push the live estimated cost breakdown to the client."""
+        try:
+            while self.running:
+                await self.send({"type": "cost_update", "cost": self.cost.snapshot(_cost_rates())})
+                await asyncio.sleep(2)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.debug("cost loop ended for %s", self.client_id, exc_info=True)
+
+    async def _persist_cost_record(self, *, model: str) -> None:
+        """Write the final per-call cost record to the configured store.
+
+        No-op when persistence is not configured (``cost_sink`` is a NullSink).
+        Never raises — a failed write must not affect call teardown.
+        """
+        if not getattr(cost_sink, "enabled", False):
+            return
+        try:
+            snapshot = self.cost.snapshot(_cost_rates())
+            persona = str(
+                self.config.get("persona")
+                or os.getenv("PERSONA")
+                or os.getenv("AGENT_NAME")
+                or ""
+            ).strip()
+            record = CostRecord.from_snapshot(
+                self.run_id,
+                snapshot,
+                transport="browser",
+                persona=persona,
+                model=model,
+                meeting_id=self.candidate_id,
+                started_at=self.cost_started_iso,
+                region=os.getenv("AZURE_REGION", "").strip(),
+                rates=_cost_rates(),
+            )
+            await cost_sink.write(record)
+        except Exception:
+            logger.debug("cost record build/write skipped for %s", self.client_id, exc_info=True)
+
 
     async def send_text(self, text: str) -> None:
         if not self.connection or not text.strip():
@@ -545,6 +654,13 @@ class VoiceSession:
                 await self.send({"type": "transcript_done", "role": "assistant", "transcript": transcript})
 
             elif etype == ServerEventType.RESPONSE_DONE:
+                response = getattr(event, "response", None)
+                usage = getattr(response, "usage", None) if response is not None else None
+                if usage is not None:
+                    try:
+                        self.cost.add_realtime_usage(usage)
+                    except Exception:
+                        logger.debug("failed to record realtime usage", exc_info=True)
                 await self.send({"type": "response_done"})
 
             elif etype == ServerEventType.ERROR:
@@ -554,9 +670,110 @@ class VoiceSession:
 
 active_sessions: dict[str, VoiceSession] = {}
 
+# Optional persistent cost store (Azure Table Storage). A no-op unless
+# COST_STORE_* env vars are configured, so local dev is unaffected.
+cost_sink = build_sink_from_env()
+
+# Per-session screen-share frame buffer (set by the front-end's
+# screen-capture.js, consumed by /api/vision/screen-frame). Keyed by the same
+# client_id used for the websocket / Voice Live session so the synthetic user
+# turn can be routed to the right session. Cleared in _stop_active_session.
+last_frame: dict[str, bytes] = {}
+
+# Most recently captured screen-share JPEGs are mirrored to disk here so we can
+# inspect exactly what was sent to the vision model (debug aid for diagnosing
+# blank/black frames vs. genuine model hallucination). Served by
+# GET /api/vision/last-frame.
+VISION_FRAMES_DIR = DATA_DIR / "vision-frames"
+
+
+def _save_debug_frame(client_id: str, jpeg_bytes: bytes, trigger: str) -> None:
+    """Persist the latest screen-share JPEG to disk for debugging.
+
+    Writes a stable ``last.jpg`` (always the most recent frame) plus a
+    timestamped copy so a sequence can be reviewed. Best-effort: never raises
+    into the request path.
+    """
+    try:
+        VISION_FRAMES_DIR.mkdir(parents=True, exist_ok=True)
+        (VISION_FRAMES_DIR / "last.jpg").write_bytes(jpeg_bytes)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+        safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in client_id)[:60]
+        (VISION_FRAMES_DIR / f"{stamp}-{trigger}-{safe}.jpg").write_bytes(jpeg_bytes)
+    except Exception:
+        logger.debug("failed to save debug vision frame", exc_info=True)
+
+
+def _vision_auto_on_share_start() -> bool:
+    return os.getenv("VISION_AUTO_ON_SHARE_START", "true").strip().lower() not in {"0", "false", "no", "off", ""}
+
+
+def _vision_max_image_dim() -> int:
+    try:
+        return max(64, int(os.getenv("VISION_MAX_IMAGE_DIM", "512")))
+    except ValueError:
+        return 512
+
+
+def _vision_periodic_interval_s() -> int:
+    try:
+        return max(0, int(os.getenv("VISION_PERIODIC_INTERVAL_S", "0")))
+    except ValueError:
+        return 0
+
+
+def _frame_screen_share_message(description: str, trigger: str) -> str:
+    """Wrap a vision description into a synthetic user turn for Voice Live.
+
+    The persona file is not edited for the POC, so we frame the message inline
+    with explicit guidance for Lisa: be brief, conversational, never read
+    sensitive strings verbatim.
+    """
+    description = description.strip()
+    if trigger == "share_start":
+        return (
+            "[Screen-share started — automatic notification]\n"
+            f"The other participant just started sharing their screen. "
+            f"Currently visible: \"{description}\"\n\n"
+            "Briefly acknowledge what they're showing in one short sentence "
+            "(for example, \"I can see your architecture diagram now\"), then "
+            "lead with your single most important observation or question. "
+            "Do not read URLs, email addresses, phone numbers, or long numbers "
+            "verbatim."
+        )
+    if trigger == "periodic":
+        return (
+            "[Screen changed — automatic re-review]\n"
+            "The shared screen changed. Below is an accurate, grounded "
+            "description of what is now visible:\n"
+            f"\"{description}\"\n\n"
+            "Only speak if there is something newly noteworthy worth flagging. "
+            "If so, make one short, prioritized remark in your own voice; do "
+            "not repeat earlier comments and do not re-narrate the whole "
+            "screen. Keep it to one or two sentences. Only use what is in the "
+            "description above; do not invent details. Do not read URLs, email "
+            "addresses, phone numbers, or long numbers verbatim."
+        )
+    return (
+        "[Solution-review request]\n"
+        "You were asked to review the shared screen. Below is an accurate, "
+        "grounded description of what is currently visible, including the "
+        "artifact, a Well-Architected assessment, and prioritized "
+        "recommendations:\n"
+        f"\"{description}\"\n\n"
+        "Relay this to the participant in your own voice as a cloud solution "
+        "architect: first say specifically what you see, then briefly assess "
+        "it, then offer one or two prioritized recommendations. Keep it "
+        "consultative and conversational — about three to five short "
+        "sentences. Only use what is in the description above; do not invent "
+        "details. Do not read URLs, email addresses, phone numbers, or long "
+        "numbers verbatim."
+    )
+
 
 async def _stop_active_session(client_id: str) -> None:
     session = active_sessions.pop(client_id, None)
+    last_frame.pop(client_id, None)
     if not session:
         return
     await session.stop()
@@ -626,6 +843,12 @@ async def config() -> dict[str, Any]:
         "teamsAvatarChromaKeyColor": os.getenv("AVATAR_CHROMA_COLOR", DEFAULT_AVATAR_CHROMA_COLOR),
         "teamsAvatarChromaEnabled": os.getenv("AVATAR_CHROMA_ENABLED", "true").strip().lower() not in {"0", "false", "no", "off"},
         "latestInvite": latest_invite,
+        "visionEnabled": vision.is_configured(),
+        "visionAutoOnShareStart": _vision_auto_on_share_start(),
+        "visionMaxImageDim": _vision_max_image_dim(),
+        "visionPeriodicIntervalS": _vision_periodic_interval_s(),
+        "costEnabled": True,
+        "costRates": _cost_rates(),
     }
 
 
@@ -725,6 +948,115 @@ async def acs_token() -> dict[str, str]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@app.get("/api/vision/last-frame")
+async def vision_last_frame() -> Response:
+    """Serve the most recently captured screen-share JPEG (debug aid).
+
+    Lets us see exactly what was sent to the vision model — a blank/black image
+    here means the capture timing is wrong; a correct screenshot here but a
+    wrong spoken answer means the voice model is hallucinating over the text.
+    """
+    path = VISION_FRAMES_DIR / "last.jpg"
+    if path.exists():
+        return Response(content=path.read_bytes(), media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+    if last_frame:
+        jpeg = next(reversed(list(last_frame.values())))
+        return Response(content=jpeg, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+    raise HTTPException(status_code=404, detail="no vision frame captured yet")
+
+
+@app.post("/api/vision/screen-frame")
+async def vision_screen_frame(request: Request) -> dict[str, Any]:
+    """Accept a JPEG screen-share frame and (optionally) make Lisa comment on it.
+
+    Body schema:
+        {
+            "clientId": "lisa-…--teams",
+            "jpegBase64": "<base64 jpeg bytes>",
+            "trigger": "on_demand" | "share_start" | "periodic" | "buffer_only"
+        }
+
+    When ``trigger != "buffer_only"`` and a matching Voice Live session is
+    active, the description is injected as a synthetic user turn — Lisa will
+    speak through the avatar. ``buffer_only`` just stores the latest frame
+    for the debug endpoint without invoking the vision model.
+    """
+    try:
+        payload = await request.json()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"invalid JSON body: {exc}") from exc
+
+    client_id = str(payload.get("clientId") or "").strip()
+    jpeg_b64 = str(payload.get("jpegBase64") or "").strip()
+    trigger = str(payload.get("trigger") or "on_demand").strip() or "on_demand"
+    if not client_id or not jpeg_b64:
+        raise HTTPException(status_code=400, detail="clientId and jpegBase64 are required")
+
+    try:
+        jpeg_bytes = base64.b64decode(jpeg_b64, validate=True)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"jpegBase64 is not valid base64: {exc}") from exc
+
+    last_frame[client_id] = jpeg_bytes
+    _save_debug_frame(client_id, jpeg_bytes, trigger)
+    logger.info(
+        "vision frame received client=%s trigger=%s bytes=%d",
+        client_id, trigger, len(jpeg_bytes),
+    )
+
+    if trigger == "buffer_only":
+        return {"ok": True, "stored": True, "spoke": False, "reason": "buffer_only"}
+
+    if not vision.is_configured():
+        return {"ok": False, "stored": True, "spoke": False, "reason": "vision_not_configured"}
+
+    session = active_sessions.get(client_id)
+    if session is None or session.connection is None:
+        return {"ok": True, "stored": True, "spoke": False, "reason": "no_active_voice_session"}
+
+    try:
+        description, vision_usage = await vision.describe_frame(jpeg_bytes, trigger=trigger)
+    except Exception as exc:
+        logger.exception("vision describe_frame failed for client=%s", client_id)
+        return {"ok": False, "stored": True, "spoke": False, "error": str(exc)}
+
+    if vision_usage:
+        try:
+            session.cost.add_vision_usage(
+                vision_usage.get("prompt_tokens", 0),
+                vision_usage.get("completion_tokens", 0),
+            )
+        except Exception:
+            logger.debug("failed to record vision usage", exc_info=True)
+
+    framed = _frame_screen_share_message(description, trigger)
+    try:
+        await session.send_text(framed)
+    except Exception as exc:
+        logger.exception("vision: send_text to Voice Live failed for client=%s", client_id)
+        return {
+            "ok": False,
+            "stored": True,
+            "spoke": False,
+            "description": description,
+            "error": str(exc),
+        }
+
+    return {"ok": True, "stored": True, "spoke": True, "description": description, "trigger": trigger}
+
+
+@app.get("/api/vision/latest-frame")
+async def vision_latest_frame(client_id: str = "") -> Response:
+    """Debug endpoint: return the most recent buffered JPEG for a session."""
+    cid = client_id.strip()
+    if not cid:
+        raise HTTPException(status_code=400, detail="client_id query parameter required")
+    frame = last_frame.get(cid)
+    if not frame:
+        raise HTTPException(status_code=404, detail="no frame buffered for this client_id")
+    return Response(content=frame, media_type="image/jpeg")
+
+
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str) -> None:
     await websocket.accept()
@@ -773,4 +1105,4 @@ if __name__ == "__main__":
     import uvicorn
 
     port = int(os.getenv("PORT", "3000"))
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True, ws="websockets")

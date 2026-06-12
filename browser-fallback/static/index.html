@@ -19,6 +19,7 @@
           <span id="voice-status" class="pill">Voice: idle</span>
           <span id="teams-status" class="pill">Teams: idle</span>
           <span id="auto-status" class="pill">Auto: off</span>
+          <span id="vision-status" class="pill">Vision: idle</span>
         </div>
       </header>
 
@@ -29,6 +30,18 @@
         </div>
         <aside class="transcript" id="transcript"></aside>
       </div>
+
+      <section class="cost-panel empty" id="cost-panel">
+        <div class="cost-head">
+          <span class="cost-title">Estimated call cost</span>
+          <span class="cost-total" id="cost-total">$0.0000</span>
+        </div>
+        <div class="cost-grid" id="cost-grid"></div>
+        <div class="cost-foot">
+          <span id="cost-elapsed">idle</span>
+          <span class="cost-note">Live estimate &middot; rates set via <code>COST_*</code> env vars</span>
+        </div>
+      </section>
     </section>
 
     <section class="controls">
@@ -90,6 +103,10 @@
         <button id="join-btn" type="button">Join Teams</button>
       </div>
       <button id="leave-btn" class="danger-button" type="button">Leave Meeting (cleanup all)</button>
+      <div class="vision-row">
+        <button id="vision-look-btn" type="button" disabled title="Have Lisa look at the screen currently being shared in the Teams meeting and comment on it.">Show Lisa my screen</button>
+        <span class="vision-hint">Lisa can only look while someone is actively sharing their screen in the Teams meeting.</span>
+      </div>
       <div class="text-row">
         <input id="text-input" type="text" placeholder="Send a text turn to page Lisa (only when not in Teams)" />
         <button id="send-text-btn" type="button" disabled>Send</button>
@@ -103,6 +120,7 @@
     </section>
   </main>
   <script src="/acs-calling.js"></script>
+  <script src="/screen-capture.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

@@ -1,7 +1,15 @@
 fastapi>=0.115.0
 uvicorn>=0.30.0
+# uvicorn ships no WebSocket protocol by default; /ws/<id> upgrades (the Voice
+# Live bridge) fail without this. Equivalent to uvicorn[standard]'s ws extra.
+websockets>=12,<16
 python-dotenv>=1.0.0
+# cryptography (transitive via azure-identity) only ships prebuilt Windows
+# ARM64 wheels for 46.0.x; newer releases fall back to a Rust source build that
+# needs MSVC + cargo. Cap to a wheel on Win/ARM64; other platforms unconstrained.
+cryptography>=46.0.3,<47; platform_machine == "ARM64" and sys_platform == "win32"
 azure-identity>=1.19.0
 azure-core>=1.30.0
-azure-ai-voicelive[aiohttp]>=1.2.0b5
+azure-ai-voicelive[aiohttp]>=1.2.0b5,<1.3
 azure-communication-identity>=1.5.0
+openai>=1.50.0

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "7016893787534804944"
+      "templateHash": "7227310937949581539"
     }
   },
   "parameters": {
@@ -39,7 +39,7 @@
     },
     "storageAccountName": {
       "type": "string",
-      "defaultValue": "[format('{0}policies{1}', parameters('prefix'), uniqueString(resourceGroup().id))]",
+      "defaultValue": "[take(format('{0}pol{1}', parameters('prefix'), uniqueString(resourceGroup().id)), 24)]",
       "metadata": {
         "description": "Storage account name (must be globally unique, 3-24 lowercase)."
       }
@@ -49,6 +49,27 @@
       "defaultValue": "hr-policies",
       "metadata": {
         "description": "Blob container name for HR policy PDFs."
+      }
+    },
+    "deployerPrincipalId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Optional principalId of the GitHub Actions OIDC UAMI. When set, gets Storage Blob Data Contributor on the storage account so the agent-deploy workflow can upload artifacts via AAD (--auth-mode login)."
+      }
+    },
+    "costTableName": {
+      "type": "string",
+      "defaultValue": "callcosts",
+      "metadata": {
+        "description": "Name of the Azure Table that stores per-call cost records (read by the costboard dashboard)."
+      }
+    },
+    "costStorePrincipalIds": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Extra principalIds to grant Storage Table Data Contributor on the cost table (e.g. the costboard dashboard identity, the VMSS user-assigned identity, or a local developer objectId). The deployer principal (when set) is granted automatically."
       }
     },
     "searchServiceName": {
@@ -75,7 +96,7 @@
       "type": "int",
       "defaultValue": 50,
       "metadata": {
-        "description": "Capacity (K TPM) for gpt-4.1-mini."
+        "description": "Capacity (K TPM) for gpt-4.1-mini (primary chat model)."
       }
     },
     "reasoningModelCapacity": {
@@ -91,12 +112,113 @@
       "metadata": {
         "description": "Capacity (K TPM) for text-embedding-3-large."
       }
+    },
+    "acsName": {
+      "type": "string",
+      "defaultValue": "[format('{0}-acs', parameters('prefix'))]",
+      "metadata": {
+        "description": "ACS resource name."
+      }
+    },
+    "acsDataLocation": {
+      "type": "string",
+      "defaultValue": "Germany",
+      "allowedValues": [
+        "Africa",
+        "Asia Pacific",
+        "Australia",
+        "Brazil",
+        "Canada",
+        "Europe",
+        "France",
+        "Germany",
+        "India",
+        "Japan",
+        "Korea",
+        "Norway",
+        "Switzerland",
+        "UAE",
+        "UK",
+        "United States"
+      ],
+      "metadata": {
+        "description": "ACS data residency location."
+      }
+    },
+    "acrName": {
+      "type": "string",
+      "defaultValue": "[take(format('{0}acr{1}', parameters('prefix'), uniqueString(resourceGroup().id)), 50)]",
+      "metadata": {
+        "description": "ACR name. 5-50 lowercase alphanumeric, globally unique."
+      }
+    },
+    "deployAcr": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Deploy ACR alongside the rest of the stack. Set false if it already exists outside this template."
+      }
+    },
+    "deployAvatarStack": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Deploy the avatar VMSS stack. Set false to skip while iterating on the Foundry side only."
+      }
+    },
+    "avatarAdminPassword": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Local admin password for the avatar VMSS (break-glass via Bastion)."
+      }
+    },
+    "avatarBootstrapZipUrl": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Bootstrap zip URL for the avatar VMSS (uploaded by the agent-deploy workflow)."
+      }
+    },
+    "avatarInstallScriptUrl": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "URL to install.ps1 (separate blob, uploaded by the agent-deploy workflow). Required when avatarBootstrapZipUrl is set."
+      }
+    },
+    "avatarInstallCertFromKeyVault": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Install the bot TLS cert from KV onto VMSS instances. Set false on first deploy (before the cert exists), then re-deploy with true."
+      }
+    },
+    "avatarAlertEmail": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Email for avatar stack alerts (empty = no alerts)."
+      }
+    },
+    "avatarInstanceCount": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Avatar VMSS instance count."
+      }
     }
+  },
+  "variables": {
+    "roleStorageBlobDataContributorId": "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
+    "roleStorageTableDataContributorId": "0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3",
+    "costTablePrincipalIds": "[union(if(empty(parameters('deployerPrincipalId')), createArray(), createArray(parameters('deployerPrincipalId'))), parameters('costStorePrincipalIds'))]",
+    "roleAcrPullId": "7f951dda-4ed3-4680-a7ca-43fe172d538d"
   },
   "resources": [
     {
       "type": "Microsoft.CognitiveServices/accounts",
-      "apiVersion": "2024-10-01",
+      "apiVersion": "2025-04-01-preview",
       "name": "[parameters('foundryAccountName')]",
       "location": "[parameters('location')]",
       "kind": "AIServices",
@@ -208,7 +330,12 @@
         "allowBlobPublicAccess": false,
         "minimumTlsVersion": "TLS1_2",
         "supportsHttpsTrafficOnly": true,
-        "allowSharedKeyAccess": true
+        "allowSharedKeyAccess": true,
+        "publicNetworkAccess": "Enabled",
+        "networkAcls": {
+          "defaultAction": "Allow",
+          "bypass": "AzureServices"
+        }
       }
     },
     {
@@ -229,6 +356,68 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccountName'), 'default')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}/{2}', parameters('storageAccountName'), 'default', 'agent-artifacts')]",
+      "properties": {
+        "publicAccess": "None"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccountName'), 'default')]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('deployerPrincipalId')))]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), parameters('deployerPrincipalId'), variables('roleStorageBlobDataContributorId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleStorageBlobDataContributorId'))]",
+        "principalId": "[parameters('deployerPrincipalId')]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/tableServices",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
+      "properties": {},
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/tableServices/tables",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}/{2}', parameters('storageAccountName'), 'default', parameters('costTableName'))]",
+      "properties": {},
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/tableServices', parameters('storageAccountName'), 'default')]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "raCostTableContributor",
+        "count": "[length(variables('costTablePrincipalIds'))]"
+      },
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), string(variables('costTablePrincipalIds')[copyIndex()]), variables('roleStorageTableDataContributorId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleStorageTableDataContributorId'))]",
+        "principalId": "[variables('costTablePrincipalIds')[copyIndex()]]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
       ]
     },
     {
@@ -254,16 +443,2873 @@
           }
         }
       }
+    },
+    {
+      "type": "Microsoft.Communication/communicationServices",
+      "apiVersion": "2023-04-01",
+      "name": "[parameters('acsName')]",
+      "location": "global",
+      "properties": {
+        "dataLocation": "[parameters('acsDataLocation')]"
+      }
+    },
+    {
+      "condition": "[parameters('deployAcr')]",
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-11-01-preview",
+      "name": "[parameters('acrName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "adminUserEnabled": false,
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "condition": "[parameters('deployAcr')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]",
+      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName')), resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('foundryProjectName')), variables('roleAcrPullId'))]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('foundryProjectName')), '2025-04-01-preview', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleAcrPullId'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('foundryProjectName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('deployAvatarStack')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "avatar-stack",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "namePrefix": {
+            "value": "[format('{0}-avatar', parameters('prefix'))]"
+          },
+          "foundryAccountName": {
+            "value": "[parameters('foundryAccountName')]"
+          },
+          "foundryProjectName": {
+            "value": "[parameters('foundryProjectName')]"
+          },
+          "acrName": "[if(parameters('deployAcr'), createObject('value', parameters('acrName')), createObject('value', parameters('acrName')))]",
+          "deployStorageAccountName": {
+            "value": "[parameters('storageAccountName')]"
+          },
+          "bootstrapZipUrl": {
+            "value": "[parameters('avatarBootstrapZipUrl')]"
+          },
+          "installScriptUrl": {
+            "value": "[parameters('avatarInstallScriptUrl')]"
+          },
+          "installCertFromKeyVault": {
+            "value": "[parameters('avatarInstallCertFromKeyVault')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('avatarAdminPassword')]"
+          },
+          "vmssInstanceCount": {
+            "value": "[parameters('avatarInstanceCount')]"
+          },
+          "alertEmail": {
+            "value": "[parameters('avatarAlertEmail')]"
+          },
+          "tags": {
+            "value": {
+              "workload": "avatar",
+              "managedBy": "bicep"
+            }
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.41.2.15936",
+              "templateHash": "18074673446506074360"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Region."
+              }
+            },
+            "namePrefix": {
+              "type": "string",
+              "defaultValue": "<NAME_PREFIX>",
+              "maxLength": 13,
+              "metadata": {
+                "description": "Common name prefix (lowercase, <=13 chars). E.g. \"<NAME_PREFIX>\"."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {
+                "workload": "avatar",
+                "managedBy": "bicep"
+              },
+              "metadata": {
+                "description": "Resource tags applied to every resource."
+              }
+            },
+            "foundryAccountName": {
+              "type": "string",
+              "metadata": {
+                "description": "Existing Foundry (Cognitive Services) account name. From main.bicep output."
+              }
+            },
+            "foundryProjectName": {
+              "type": "string",
+              "metadata": {
+                "description": "Existing Foundry project name used by Voice Live agent mode."
+              }
+            },
+            "agentName": {
+              "type": "string",
+              "defaultValue": "lisa",
+              "metadata": {
+                "description": "Hosted Foundry agent name used by the avatar sidecar. Must match the agent name created by hosted-agent/deploy.sh (default there: lisa)."
+              }
+            },
+            "agentVersion": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Hosted Foundry agent version. Empty means latest/routed version."
+              }
+            },
+            "azureTenantId": {
+              "type": "string",
+              "defaultValue": "[tenant().tenantId]",
+              "metadata": {
+                "description": "Tenant ID used by sidecar token pinning."
+              }
+            },
+            "voiceLiveApiVersion": {
+              "type": "string",
+              "defaultValue": "2026-01-01-preview",
+              "metadata": {
+                "description": "Voice Live API version for the sidecar."
+              }
+            },
+            "voiceLiveVoice": {
+              "type": "string",
+              "defaultValue": "en-US-AvaMultilingualNeural",
+              "metadata": {
+                "description": "Azure voice name used by the sidecar when no agent metadata voice config is attached."
+              }
+            },
+            "avatarCharacter": {
+              "type": "string",
+              "defaultValue": "lisa",
+              "metadata": {
+                "description": "Avatar character used by the sidecar."
+              }
+            },
+            "avatarStyle": {
+              "type": "string",
+              "defaultValue": "casual-sitting",
+              "metadata": {
+                "description": "Avatar style used by the sidecar."
+              }
+            },
+            "avatarBackgroundImageUrl": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional public HTTPS URL the Voice Live service can fetch to use as the avatar background image. Empty = use avatarBackgroundColor instead."
+              }
+            },
+            "avatarBackgroundColor": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional CSS hex color (e.g. \"#00ff00\" or \"#FFFFFFFF\") used as the avatar background when no image URL is set. Empty = Voice Live default (transparent)."
+              }
+            },
+            "agentLanguage": {
+              "type": "string",
+              "defaultValue": "en",
+              "metadata": {
+                "description": "Language hint for sidecar transcription/VAD config."
+              }
+            },
+            "acrName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Existing ACR name. Empty = skip ACR-related RBAC."
+              }
+            },
+            "deployStorageAccountName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Storage account name used for VMSS bootstrap artifacts (zip + install.ps1)."
+              }
+            },
+            "bootstrapZipUrl": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Bootstrap blob URL (signed or readable by VMSS MI). Required to install the bot+sidecar."
+              }
+            },
+            "installScriptUrl": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "URL to install.ps1 (separate blob). Required when bootstrapZipUrl is set."
+              }
+            },
+            "cseRevision": {
+              "type": "string",
+              "defaultValue": "1",
+              "metadata": {
+                "description": "Bump this string to force CSE bootstrap to re-run on existing instances when install.ps1 / lisa-latest.zip changed but blob URLs are stable."
+              }
+            },
+            "installCertFromKeyVault": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Install the AzureKeyVault VM extension to sync bot-tls-cert into LocalMachine\\My. Set false on first deploy (before the cert exists) and re-deploy with true after."
+              }
+            },
+            "vmssInstanceCount": {
+              "type": "int",
+              "defaultValue": 1,
+              "minValue": 1,
+              "maxValue": 10,
+              "metadata": {
+                "description": "VMSS instance count. 1 = no concurrency. 2 = hot-standby HA."
+              }
+            },
+            "vmSize": {
+              "type": "string",
+              "defaultValue": "Standard_D4s_v5",
+              "metadata": {
+                "description": "VM SKU."
+              }
+            },
+            "adminUsername": {
+              "type": "string",
+              "defaultValue": "azureuser",
+              "metadata": {
+                "description": "Local admin user (break-glass via Bastion)."
+              }
+            },
+            "adminPassword": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Local admin password."
+              }
+            },
+            "vmssDnsLabelPrefix": {
+              "type": "string",
+              "defaultValue": "[format('{0}-i', parameters('namePrefix'))]",
+              "metadata": {
+                "description": "DNS label prefix for VMSS instance public IPs (used only when useLoadBalancer = false; legacy mode)."
+              }
+            },
+            "useLoadBalancer": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Use Standard Load Balancer in front of the VMSS (recommended). Required for the Microsoft Graph calling bot media SDK self-test to pass (per-instance Public IPs do NOT support NAT hairpin and the SDK can't be fooled with /etc/hosts because it discovers its public IP via IMDS)."
+              }
+            },
+            "lbDnsLabelPrefix": {
+              "type": "string",
+              "defaultValue": "[format('{0}-lb', parameters('namePrefix'))]",
+              "metadata": {
+                "description": "DNS label prefix for the LB public IP. Empty = no DNS label."
+              }
+            },
+            "alertEmail": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Email address for monitor alerts. Empty = no alerts."
+              }
+            },
+            "keyVaultPublicNetworkAccess": {
+              "type": "string",
+              "defaultValue": "Enabled",
+              "allowedValues": [
+                "Enabled",
+                "Disabled"
+              ],
+              "metadata": {
+                "description": "Key Vault public network access. Production should use Disabled with a private endpoint."
+              }
+            },
+            "keyVaultNetworkAclsDefaultAction": {
+              "type": "string",
+              "defaultValue": "Allow",
+              "allowedValues": [
+                "Allow",
+                "Deny"
+              ],
+              "metadata": {
+                "description": "Key Vault network ACL default action. Production should use Deny."
+              }
+            },
+            "enableAppGateway": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Provision Application Gateway in front of the signaling port. Requires kvCertSecretId."
+              }
+            },
+            "appGwKvCertId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Versionless KV secret URI for the AppGw TLS PFX. Required when enableAppGateway = true."
+              }
+            },
+            "appGwIdentityId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "User-assigned MI ID with KV Secrets User on the AppGw cert vault. Required when enableAppGateway = true."
+              }
+            },
+            "appGwDnsLabelPrefix": {
+              "type": "string",
+              "defaultValue": "[format('{0}-app', parameters('namePrefix'))]",
+              "metadata": {
+                "description": "DNS label for the AppGw frontend public IP."
+              }
+            },
+            "enableKeyVaultPrivateEndpoint": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Provision a Key Vault private endpoint in the privateLink subnet and link privatelink.vaultcore.azure.net to the Avatar VNet."
+              }
+            },
+            "keyVaultPrivateDnsZoneName": {
+              "type": "string",
+              "defaultValue": "privatelink.vaultcore.azure.net",
+              "metadata": {
+                "description": "Private DNS zone name for Key Vault private endpoints."
+              }
+            },
+            "vnetAddressSpace": {
+              "type": "string",
+              "defaultValue": "10.42.0.0/16"
+            },
+            "vmssSubnetPrefix": {
+              "type": "string",
+              "defaultValue": "10.42.0.0/24"
+            },
+            "appGwSubnetPrefix": {
+              "type": "string",
+              "defaultValue": "10.42.1.0/27"
+            },
+            "bastionSubnetPrefix": {
+              "type": "string",
+              "defaultValue": "10.42.2.0/26"
+            },
+            "privateLinkSubnetPrefix": {
+              "type": "string",
+              "defaultValue": "10.42.3.0/27"
+            }
+          },
+          "resources": [
+            {
+              "condition": "[not(empty(parameters('alertEmail')))]",
+              "type": "Microsoft.Insights/metricAlerts",
+              "apiVersion": "2018-03-01",
+              "name": "[format('{0}-vmss-unhealthy', parameters('namePrefix'))]",
+              "location": "global",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "description": "VMSS has unhealthy instances for >5 min — auto-repair may be running.",
+                "severity": 2,
+                "enabled": true,
+                "scopes": [
+                  "[resourceId('Microsoft.Compute/virtualMachineScaleSets', reference(resourceId('Microsoft.Resources/deployments', 'avatar-vmss'), '2025-04-01').outputs.vmssName.value)]"
+                ],
+                "evaluationFrequency": "PT1M",
+                "windowSize": "PT5M",
+                "targetResourceType": "Microsoft.Compute/virtualMachineScaleSets",
+                "criteria": {
+                  "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+                  "allOf": [
+                    {
+                      "name": "unhealthyVMs",
+                      "metricNamespace": "Microsoft.Compute/virtualMachineScaleSets",
+                      "metricName": "VmAvailabilityMetric",
+                      "operator": "LessThan",
+                      "threshold": 1,
+                      "timeAggregation": "Average",
+                      "criterionType": "StaticThresholdCriterion"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "actionGroupId": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-monitor'), '2025-04-01').outputs.actionGroupId.value]"
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-monitor')]",
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-vmss')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "avatar-network",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "namePrefix": {
+                    "value": "[parameters('namePrefix')]"
+                  },
+                  "vnetAddressSpace": {
+                    "value": "[parameters('vnetAddressSpace')]"
+                  },
+                  "vmssSubnetPrefix": {
+                    "value": "[parameters('vmssSubnetPrefix')]"
+                  },
+                  "appGwSubnetPrefix": {
+                    "value": "[parameters('appGwSubnetPrefix')]"
+                  },
+                  "bastionSubnetPrefix": {
+                    "value": "[parameters('bastionSubnetPrefix')]"
+                  },
+                  "privateLinkSubnetPrefix": {
+                    "value": "[parameters('privateLinkSubnetPrefix')]"
+                  },
+                  "enableLoadBalancer": {
+                    "value": "[parameters('useLoadBalancer')]"
+                  },
+                  "lbDnsLabelPrefix": {
+                    "value": "[parameters('lbDnsLabelPrefix')]"
+                  },
+                  "tags": {
+                    "value": "[parameters('tags')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.41.2.15936",
+                      "templateHash": "3719179724281863151"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Region."
+                      }
+                    },
+                    "namePrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Common name prefix."
+                      }
+                    },
+                    "vnetAddressSpace": {
+                      "type": "string",
+                      "defaultValue": "10.42.0.0/16",
+                      "metadata": {
+                        "description": "VNet address space."
+                      }
+                    },
+                    "vmssSubnetPrefix": {
+                      "type": "string",
+                      "defaultValue": "10.42.0.0/24",
+                      "metadata": {
+                        "description": "VMSS subnet prefix."
+                      }
+                    },
+                    "appGwSubnetPrefix": {
+                      "type": "string",
+                      "defaultValue": "10.42.1.0/27",
+                      "metadata": {
+                        "description": "App Gateway subnet prefix (must be at least /27)."
+                      }
+                    },
+                    "bastionSubnetPrefix": {
+                      "type": "string",
+                      "defaultValue": "10.42.2.0/26",
+                      "metadata": {
+                        "description": "Azure Bastion subnet prefix (must be at least /26)."
+                      }
+                    },
+                    "privateLinkSubnetPrefix": {
+                      "type": "string",
+                      "defaultValue": "10.42.3.0/27",
+                      "metadata": {
+                        "description": "Private Endpoint subnet prefix."
+                      }
+                    },
+                    "enableLoadBalancer": {
+                      "type": "bool",
+                      "defaultValue": true,
+                      "metadata": {
+                        "description": "Provision a Standard Load Balancer + public IP that fronts the VMSS for both Graph signaling (443) and the Skype Bots Media platform (8445 per-instance NAT)."
+                      }
+                    },
+                    "lbDnsLabelPrefix": {
+                      "type": "string",
+                      "defaultValue": "[format('{0}-lb', parameters('namePrefix'))]",
+                      "metadata": {
+                        "description": "DNS label for the public load balancer frontend. Becomes <prefix>.<region>.cloudapp.azure.com. Empty = no DNS label (use raw IP)."
+                      }
+                    },
+                    "mediaNatStartPort": {
+                      "type": "int",
+                      "defaultValue": 8445,
+                      "minValue": 1024,
+                      "maxValue": 65000,
+                      "metadata": {
+                        "description": "First port in the inbound NAT pool that maps to backend 8445 on each VMSS instance. Frontend port for instance i is mediaNatStartPort + i. Default 8445 — keeps the FIRST instance reachable on the symmetric port 8445 (matches Microsoft Graph calling sample defaults)."
+                      }
+                    },
+                    "mediaNatEndPort": {
+                      "type": "int",
+                      "defaultValue": 8544,
+                      "minValue": 1024,
+                      "maxValue": 65535,
+                      "metadata": {
+                        "description": "Last port in the inbound NAT pool. Pool size caps the maximum supported VMSS instance count."
+                      }
+                    },
+                    "tags": {
+                      "type": "object",
+                      "defaultValue": {},
+                      "metadata": {
+                        "description": "Tags applied to every resource."
+                      }
+                    }
+                  },
+                  "variables": {
+                    "vnetName": "[format('{0}-vnet', parameters('namePrefix'))]",
+                    "nsgVmssName": "[format('{0}-vmss-nsg', parameters('namePrefix'))]",
+                    "nsgBastionName": "[format('{0}-bastion-nsg', parameters('namePrefix'))]",
+                    "lbName": "[format('{0}-lb', parameters('namePrefix'))]",
+                    "lbPipName": "[format('{0}-lb-pip', parameters('namePrefix'))]",
+                    "lbBackendPoolName": "vmss-backend",
+                    "lbFrontendName": "lb-frontend",
+                    "lbProbe443Name": "probe-tcp-443",
+                    "lbProbe8445Name": "probe-tcp-8445",
+                    "lbProbe80Name": "probe-tcp-80",
+                    "lbRule443Name": "lb-rule-443",
+                    "lbRule80Name": "lb-rule-80",
+                    "lbNatPoolMediaName": "nat-pool-media-8445"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/networkSecurityGroups",
+                      "apiVersion": "2024-01-01",
+                      "name": "[variables('nsgVmssName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "securityRules": [
+                          {
+                            "name": "AllowBotKestrelHTTPS",
+                            "properties": {
+                              "priority": 100,
+                              "direction": "Inbound",
+                              "access": "Allow",
+                              "protocol": "Tcp",
+                              "sourceAddressPrefix": "Internet",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "*",
+                              "destinationPortRanges": [
+                                "9441",
+                                "9442"
+                              ]
+                            }
+                          },
+                          {
+                            "name": "AllowMediaPort8445",
+                            "properties": {
+                              "priority": 110,
+                              "direction": "Inbound",
+                              "access": "Allow",
+                              "protocol": "Tcp",
+                              "sourceAddressPrefix": "Internet",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "*",
+                              "destinationPortRange": "8445"
+                            }
+                          },
+                          {
+                            "name": "AllowAcmeHttp01",
+                            "properties": {
+                              "priority": 115,
+                              "direction": "Inbound",
+                              "access": "Allow",
+                              "protocol": "Tcp",
+                              "sourceAddressPrefix": "Internet",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "*",
+                              "destinationPortRange": "80"
+                            }
+                          },
+                          {
+                            "name": "AllowSidecarHealthFromVnet",
+                            "properties": {
+                              "priority": 120,
+                              "direction": "Inbound",
+                              "access": "Allow",
+                              "protocol": "Tcp",
+                              "sourceAddressPrefix": "VirtualNetwork",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "*",
+                              "destinationPortRange": "5001"
+                            }
+                          },
+                          {
+                            "name": "AllowAppGwBackendFromVnet",
+                            "properties": {
+                              "priority": 130,
+                              "direction": "Inbound",
+                              "access": "Allow",
+                              "protocol": "Tcp",
+                              "sourceAddressPrefix": "VirtualNetwork",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "*",
+                              "destinationPortRange": "8443"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Network/networkSecurityGroups",
+                      "apiVersion": "2024-01-01",
+                      "name": "[variables('nsgBastionName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "securityRules": [
+                          {
+                            "name": "AllowHttpsInbound",
+                            "properties": {
+                              "priority": 120,
+                              "direction": "Inbound",
+                              "access": "Allow",
+                              "protocol": "Tcp",
+                              "sourceAddressPrefix": "Internet",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "*",
+                              "destinationPortRange": "443"
+                            }
+                          },
+                          {
+                            "name": "AllowGatewayManager",
+                            "properties": {
+                              "priority": 130,
+                              "direction": "Inbound",
+                              "access": "Allow",
+                              "protocol": "Tcp",
+                              "sourceAddressPrefix": "GatewayManager",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "*",
+                              "destinationPortRange": "443"
+                            }
+                          },
+                          {
+                            "name": "AllowAzureLoadBalancer",
+                            "properties": {
+                              "priority": 140,
+                              "direction": "Inbound",
+                              "access": "Allow",
+                              "protocol": "Tcp",
+                              "sourceAddressPrefix": "AzureLoadBalancer",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "*",
+                              "destinationPortRange": "443"
+                            }
+                          },
+                          {
+                            "name": "AllowBastionHostCommunication",
+                            "properties": {
+                              "priority": 150,
+                              "direction": "Inbound",
+                              "access": "Allow",
+                              "protocol": "*",
+                              "sourceAddressPrefix": "VirtualNetwork",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "VirtualNetwork",
+                              "destinationPortRanges": [
+                                "8080",
+                                "5701"
+                              ]
+                            }
+                          },
+                          {
+                            "name": "AllowSshRdpOutbound",
+                            "properties": {
+                              "priority": 100,
+                              "direction": "Outbound",
+                              "access": "Allow",
+                              "protocol": "*",
+                              "sourceAddressPrefix": "*",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "VirtualNetwork",
+                              "destinationPortRanges": [
+                                "22",
+                                "3389"
+                              ]
+                            }
+                          },
+                          {
+                            "name": "AllowAzureCloudOutbound",
+                            "properties": {
+                              "priority": 110,
+                              "direction": "Outbound",
+                              "access": "Allow",
+                              "protocol": "Tcp",
+                              "sourceAddressPrefix": "*",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "AzureCloud",
+                              "destinationPortRange": "443"
+                            }
+                          },
+                          {
+                            "name": "AllowBastionCommunicationOutbound",
+                            "properties": {
+                              "priority": 120,
+                              "direction": "Outbound",
+                              "access": "Allow",
+                              "protocol": "*",
+                              "sourceAddressPrefix": "VirtualNetwork",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "VirtualNetwork",
+                              "destinationPortRanges": [
+                                "8080",
+                                "5701"
+                              ]
+                            }
+                          },
+                          {
+                            "name": "AllowGetSessionInformation",
+                            "properties": {
+                              "priority": 130,
+                              "direction": "Outbound",
+                              "access": "Allow",
+                              "protocol": "*",
+                              "sourceAddressPrefix": "*",
+                              "sourcePortRange": "*",
+                              "destinationAddressPrefix": "Internet",
+                              "destinationPortRange": "80"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Network/virtualNetworks",
+                      "apiVersion": "2024-01-01",
+                      "name": "[variables('vnetName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "addressSpace": {
+                          "addressPrefixes": [
+                            "[parameters('vnetAddressSpace')]"
+                          ]
+                        },
+                        "subnets": [
+                          {
+                            "name": "vmss",
+                            "properties": {
+                              "addressPrefix": "[parameters('vmssSubnetPrefix')]",
+                              "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgVmssName'))]"
+                              }
+                            }
+                          },
+                          {
+                            "name": "appgw",
+                            "properties": {
+                              "addressPrefix": "[parameters('appGwSubnetPrefix')]"
+                            }
+                          },
+                          {
+                            "name": "AzureBastionSubnet",
+                            "properties": {
+                              "addressPrefix": "[parameters('bastionSubnetPrefix')]",
+                              "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgBastionName'))]"
+                              }
+                            }
+                          },
+                          {
+                            "name": "privateLink",
+                            "properties": {
+                              "addressPrefix": "[parameters('privateLinkSubnetPrefix')]",
+                              "privateEndpointNetworkPolicies": "Disabled"
+                            }
+                          }
+                        ]
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgBastionName'))]",
+                        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgVmssName'))]"
+                      ]
+                    },
+                    {
+                      "condition": "[parameters('enableLoadBalancer')]",
+                      "type": "Microsoft.Network/publicIPAddresses",
+                      "apiVersion": "2024-01-01",
+                      "name": "[variables('lbPipName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "sku": {
+                        "name": "Standard"
+                      },
+                      "zones": [
+                        "1",
+                        "2",
+                        "3"
+                      ],
+                      "properties": {
+                        "publicIPAllocationMethod": "Static",
+                        "publicIPAddressVersion": "IPv4",
+                        "idleTimeoutInMinutes": 15,
+                        "dnsSettings": "[if(empty(parameters('lbDnsLabelPrefix')), null(), createObject('domainNameLabel', parameters('lbDnsLabelPrefix')))]"
+                      }
+                    },
+                    {
+                      "condition": "[parameters('enableLoadBalancer')]",
+                      "type": "Microsoft.Network/loadBalancers",
+                      "apiVersion": "2024-01-01",
+                      "name": "[variables('lbName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "sku": {
+                        "name": "Standard"
+                      },
+                      "properties": {
+                        "frontendIPConfigurations": [
+                          {
+                            "name": "[variables('lbFrontendName')]",
+                            "properties": {
+                              "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPipName'))]"
+                              }
+                            }
+                          }
+                        ],
+                        "backendAddressPools": [
+                          {
+                            "name": "[variables('lbBackendPoolName')]"
+                          }
+                        ],
+                        "probes": [
+                          {
+                            "name": "[variables('lbProbe443Name')]",
+                            "properties": {
+                              "protocol": "Tcp",
+                              "port": 9442,
+                              "intervalInSeconds": 15,
+                              "numberOfProbes": 2
+                            }
+                          },
+                          {
+                            "name": "[variables('lbProbe8445Name')]",
+                            "properties": {
+                              "protocol": "Tcp",
+                              "port": 8445,
+                              "intervalInSeconds": 15,
+                              "numberOfProbes": 2
+                            }
+                          },
+                          {
+                            "name": "[variables('lbProbe80Name')]",
+                            "properties": {
+                              "protocol": "Tcp",
+                              "port": 80,
+                              "intervalInSeconds": 15,
+                              "numberOfProbes": 2
+                            }
+                          }
+                        ],
+                        "loadBalancingRules": [
+                          {
+                            "name": "[variables('lbRule443Name')]",
+                            "properties": {
+                              "frontendIPConfiguration": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', variables('lbName'), variables('lbFrontendName'))]"
+                              },
+                              "backendAddressPool": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('lbName'), variables('lbBackendPoolName'))]"
+                              },
+                              "probe": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/probes', variables('lbName'), variables('lbProbe443Name'))]"
+                              },
+                              "protocol": "Tcp",
+                              "frontendPort": 443,
+                              "backendPort": 9442,
+                              "enableFloatingIP": false,
+                              "enableTcpReset": true,
+                              "idleTimeoutInMinutes": 15,
+                              "loadDistribution": "Default",
+                              "disableOutboundSnat": true
+                            }
+                          },
+                          {
+                            "name": "[variables('lbRule80Name')]",
+                            "properties": {
+                              "frontendIPConfiguration": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', variables('lbName'), variables('lbFrontendName'))]"
+                              },
+                              "backendAddressPool": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('lbName'), variables('lbBackendPoolName'))]"
+                              },
+                              "probe": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/probes', variables('lbName'), variables('lbProbe80Name'))]"
+                              },
+                              "protocol": "Tcp",
+                              "frontendPort": 80,
+                              "backendPort": 80,
+                              "enableFloatingIP": false,
+                              "enableTcpReset": true,
+                              "idleTimeoutInMinutes": 4,
+                              "loadDistribution": "Default",
+                              "disableOutboundSnat": true
+                            }
+                          }
+                        ],
+                        "outboundRules": [
+                          {
+                            "name": "vmss-outbound",
+                            "properties": {
+                              "frontendIPConfigurations": [
+                                {
+                                  "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', variables('lbName'), variables('lbFrontendName'))]"
+                                }
+                              ],
+                              "backendAddressPool": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('lbName'), variables('lbBackendPoolName'))]"
+                              },
+                              "protocol": "All",
+                              "allocatedOutboundPorts": 0,
+                              "idleTimeoutInMinutes": 15,
+                              "enableTcpReset": true
+                            }
+                          }
+                        ],
+                        "inboundNatPools": [
+                          {
+                            "name": "[variables('lbNatPoolMediaName')]",
+                            "properties": {
+                              "frontendIPConfiguration": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', variables('lbName'), variables('lbFrontendName'))]"
+                              },
+                              "protocol": "Tcp",
+                              "frontendPortRangeStart": "[parameters('mediaNatStartPort')]",
+                              "frontendPortRangeEnd": "[parameters('mediaNatEndPort')]",
+                              "backendPort": 8445,
+                              "enableFloatingIP": false,
+                              "enableTcpReset": true,
+                              "idleTimeoutInMinutes": 15
+                            }
+                          }
+                        ]
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPipName'))]"
+                      ]
+                    }
+                  ],
+                  "outputs": {
+                    "vnetId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+                    },
+                    "vnetName": {
+                      "type": "string",
+                      "value": "[variables('vnetName')]"
+                    },
+                    "vmssSubnetId": {
+                      "type": "string",
+                      "value": "[format('{0}/subnets/vmss', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')))]"
+                    },
+                    "appGwSubnetId": {
+                      "type": "string",
+                      "value": "[format('{0}/subnets/appgw', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')))]"
+                    },
+                    "bastionSubnetId": {
+                      "type": "string",
+                      "value": "[format('{0}/subnets/AzureBastionSubnet', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')))]"
+                    },
+                    "privateLinkSubnetId": {
+                      "type": "string",
+                      "value": "[format('{0}/subnets/privateLink', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')))]"
+                    },
+                    "lbBackendPoolId": {
+                      "type": "string",
+                      "value": "[if(parameters('enableLoadBalancer'), format('{0}/backendAddressPools/{1}', resourceId('Microsoft.Network/loadBalancers', variables('lbName')), variables('lbBackendPoolName')), '')]"
+                    },
+                    "lbMediaNatPoolId": {
+                      "type": "string",
+                      "value": "[if(parameters('enableLoadBalancer'), format('{0}/inboundNatPools/{1}', resourceId('Microsoft.Network/loadBalancers', variables('lbName')), variables('lbNatPoolMediaName')), '')]"
+                    },
+                    "lbPublicIp": {
+                      "type": "string",
+                      "value": "[if(parameters('enableLoadBalancer'), reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPipName')), '2024-01-01').ipAddress, '')]"
+                    },
+                    "lbFqdn": {
+                      "type": "string",
+                      "value": "[if(and(parameters('enableLoadBalancer'), not(empty(parameters('lbDnsLabelPrefix')))), reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPipName')), '2024-01-01').dnsSettings.fqdn, '')]"
+                    },
+                    "mediaNatStartPort": {
+                      "type": "int",
+                      "value": "[parameters('mediaNatStartPort')]"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "avatar-monitor",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "namePrefix": {
+                    "value": "[parameters('namePrefix')]"
+                  },
+                  "alertEmail": {
+                    "value": "[parameters('alertEmail')]"
+                  },
+                  "tags": {
+                    "value": "[parameters('tags')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.41.2.15936",
+                      "templateHash": "14167131098800194781"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Region."
+                      }
+                    },
+                    "namePrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Common name prefix."
+                      }
+                    },
+                    "logRetentionDays": {
+                      "type": "int",
+                      "defaultValue": 90,
+                      "minValue": 30,
+                      "maxValue": 730,
+                      "metadata": {
+                        "description": "Log Analytics workspace retention (days)."
+                      }
+                    },
+                    "alertEmail": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Email address for alert notifications. Empty disables alerts."
+                      }
+                    },
+                    "tags": {
+                      "type": "object",
+                      "defaultValue": {},
+                      "metadata": {
+                        "description": "Resource tags."
+                      }
+                    }
+                  },
+                  "variables": {
+                    "workspaceName": "[format('{0}-law', parameters('namePrefix'))]",
+                    "appInsightsName": "[format('{0}-appi', parameters('namePrefix'))]",
+                    "actionGroupName": "[format('{0}-ag', parameters('namePrefix'))]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.OperationalInsights/workspaces",
+                      "apiVersion": "2023-09-01",
+                      "name": "[variables('workspaceName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "sku": {
+                          "name": "PerGB2018"
+                        },
+                        "retentionInDays": "[parameters('logRetentionDays')]",
+                        "features": {
+                          "enableLogAccessUsingOnlyResourcePermissions": true
+                        }
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Insights/components",
+                      "apiVersion": "2020-02-02",
+                      "name": "[variables('appInsightsName')]",
+                      "location": "[parameters('location')]",
+                      "kind": "web",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "Application_Type": "web",
+                        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]",
+                        "IngestionMode": "LogAnalytics",
+                        "publicNetworkAccessForIngestion": "Enabled",
+                        "publicNetworkAccessForQuery": "Enabled"
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+                      ]
+                    },
+                    {
+                      "condition": "[not(empty(parameters('alertEmail')))]",
+                      "type": "Microsoft.Insights/actionGroups",
+                      "apiVersion": "2024-10-01-preview",
+                      "name": "[variables('actionGroupName')]",
+                      "location": "global",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "groupShortName": "[take(parameters('namePrefix'), 12)]",
+                        "enabled": true,
+                        "emailReceivers": [
+                          {
+                            "name": "opsEmail",
+                            "emailAddress": "[parameters('alertEmail')]",
+                            "useCommonAlertSchema": true
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "workspaceId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+                    },
+                    "workspaceName": {
+                      "type": "string",
+                      "value": "[variables('workspaceName')]"
+                    },
+                    "appInsightsId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+                    },
+                    "appInsightsConnectionString": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
+                    },
+                    "appInsightsInstrumentationKey": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').InstrumentationKey]"
+                    },
+                    "actionGroupId": {
+                      "type": "string",
+                      "value": "[if(empty(parameters('alertEmail')), '', resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName')))]"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "avatar-keyvault",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "keyVaultName": {
+                    "value": "[format('{0}kv', replace(parameters('namePrefix'), '-', ''))]"
+                  },
+                  "publicNetworkAccess": {
+                    "value": "[parameters('keyVaultPublicNetworkAccess')]"
+                  },
+                  "networkAclsDefaultAction": {
+                    "value": "[parameters('keyVaultNetworkAclsDefaultAction')]"
+                  },
+                  "tags": {
+                    "value": "[parameters('tags')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.41.2.15936",
+                      "templateHash": "7579568529313764359"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Region."
+                      }
+                    },
+                    "keyVaultName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Key Vault name. 3-24 chars, globally unique."
+                      }
+                    },
+                    "tenantId": {
+                      "type": "string",
+                      "defaultValue": "[subscription().tenantId]",
+                      "metadata": {
+                        "description": "Tenant ID for KV."
+                      }
+                    },
+                    "softDeleteRetentionInDays": {
+                      "type": "int",
+                      "defaultValue": 90,
+                      "minValue": 7,
+                      "maxValue": 90,
+                      "metadata": {
+                        "description": "Soft-delete retention (days, 7-90)."
+                      }
+                    },
+                    "enablePurgeProtection": {
+                      "type": "bool",
+                      "defaultValue": true,
+                      "metadata": {
+                        "description": "Enable purge protection (cannot be disabled once enabled)."
+                      }
+                    },
+                    "tags": {
+                      "type": "object",
+                      "defaultValue": {},
+                      "metadata": {
+                        "description": "Resource tags."
+                      }
+                    },
+                    "publicNetworkAccess": {
+                      "type": "string",
+                      "defaultValue": "Enabled",
+                      "allowedValues": [
+                        "Enabled",
+                        "Disabled"
+                      ],
+                      "metadata": {
+                        "description": "Key Vault public network access. Production should use Disabled and private endpoint access."
+                      }
+                    },
+                    "networkAclsDefaultAction": {
+                      "type": "string",
+                      "defaultValue": "Allow",
+                      "allowedValues": [
+                        "Allow",
+                        "Deny"
+                      ],
+                      "metadata": {
+                        "description": "Default action for Key Vault network ACLs. Production should use Deny when public network access is ever re-enabled."
+                      }
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.KeyVault/vaults",
+                      "apiVersion": "2024-04-01-preview",
+                      "name": "[parameters('keyVaultName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "tenantId": "[parameters('tenantId')]",
+                        "sku": {
+                          "family": "A",
+                          "name": "standard"
+                        },
+                        "enableRbacAuthorization": true,
+                        "enableSoftDelete": true,
+                        "softDeleteRetentionInDays": "[parameters('softDeleteRetentionInDays')]",
+                        "enablePurgeProtection": "[if(parameters('enablePurgeProtection'), true(), null())]",
+                        "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
+                        "networkAcls": {
+                          "bypass": "AzureServices",
+                          "defaultAction": "[parameters('networkAclsDefaultAction')]"
+                        }
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "keyVaultId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+                    },
+                    "keyVaultName": {
+                      "type": "string",
+                      "value": "[parameters('keyVaultName')]"
+                    },
+                    "keyVaultUri": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2024-04-01-preview').vaultUri]"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "condition": "[parameters('enableKeyVaultPrivateEndpoint')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "avatar-kv-private-endpoint",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "namePrefix": {
+                    "value": "[parameters('namePrefix')]"
+                  },
+                  "keyVaultId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-keyvault'), '2025-04-01').outputs.keyVaultId.value]"
+                  },
+                  "keyVaultName": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-keyvault'), '2025-04-01').outputs.keyVaultName.value]"
+                  },
+                  "privateEndpointSubnetId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.privateLinkSubnetId.value]"
+                  },
+                  "vnetId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.vnetId.value]"
+                  },
+                  "privateDnsZoneName": {
+                    "value": "[parameters('keyVaultPrivateDnsZoneName')]"
+                  },
+                  "tags": {
+                    "value": "[parameters('tags')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.41.2.15936",
+                      "templateHash": "5348598191230138815"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Region."
+                      }
+                    },
+                    "namePrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Common name prefix."
+                      }
+                    },
+                    "keyVaultId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Existing Key Vault resource ID."
+                      }
+                    },
+                    "keyVaultName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Existing Key Vault name."
+                      }
+                    },
+                    "privateEndpointSubnetId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Subnet ID for private endpoints. Use the Avatar privateLink subnet, not the VMSS subnet."
+                      }
+                    },
+                    "vnetId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Avatar VNet resource ID to link to the private DNS zone."
+                      }
+                    },
+                    "privateDnsZoneName": {
+                      "type": "string",
+                      "defaultValue": "privatelink.vaultcore.azure.net",
+                      "metadata": {
+                        "description": "Private DNS zone name for Azure Key Vault private endpoints."
+                      }
+                    },
+                    "tags": {
+                      "type": "object",
+                      "defaultValue": {},
+                      "metadata": {
+                        "description": "Resource tags."
+                      }
+                    }
+                  },
+                  "variables": {
+                    "privateEndpointName": "[format('{0}-kv-pe', parameters('namePrefix'))]",
+                    "privateEndpointConnectionName": "[format('{0}-vault', parameters('keyVaultName'))]",
+                    "privateDnsZoneGroupName": "default",
+                    "vnetLinkName": "[format('{0}-kvdns-link', parameters('namePrefix'))]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/privateDnsZones",
+                      "apiVersion": "2020-06-01",
+                      "name": "[parameters('privateDnsZoneName')]",
+                      "location": "global",
+                      "tags": "[parameters('tags')]"
+                    },
+                    {
+                      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+                      "apiVersion": "2020-06-01",
+                      "name": "[format('{0}/{1}', parameters('privateDnsZoneName'), variables('vnetLinkName'))]",
+                      "location": "global",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "registrationEnabled": false,
+                        "virtualNetwork": {
+                          "id": "[parameters('vnetId')]"
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDnsZoneName'))]"
+                      ]
+                    },
+                    {
+                      "type": "Microsoft.Network/privateEndpoints",
+                      "apiVersion": "2024-01-01",
+                      "name": "[variables('privateEndpointName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "subnet": {
+                          "id": "[parameters('privateEndpointSubnetId')]"
+                        },
+                        "privateLinkServiceConnections": [
+                          {
+                            "name": "[variables('privateEndpointConnectionName')]",
+                            "properties": {
+                              "privateLinkServiceId": "[parameters('keyVaultId')]",
+                              "groupIds": [
+                                "vault"
+                              ],
+                              "privateLinkServiceConnectionState": {
+                                "status": "Approved",
+                                "description": "Auto-approved by Avatar stack deployment.",
+                                "actionsRequired": "None"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+                      "apiVersion": "2024-01-01",
+                      "name": "[format('{0}/{1}', variables('privateEndpointName'), variables('privateDnsZoneGroupName'))]",
+                      "properties": {
+                        "privateDnsZoneConfigs": [
+                          {
+                            "name": "vault",
+                            "properties": {
+                              "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDnsZoneName'))]"
+                            }
+                          }
+                        ]
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Network/privateDnsZones/virtualNetworkLinks', parameters('privateDnsZoneName'), variables('vnetLinkName'))]",
+                        "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDnsZoneName'))]",
+                        "[resourceId('Microsoft.Network/privateEndpoints', variables('privateEndpointName'))]"
+                      ]
+                    }
+                  ],
+                  "outputs": {
+                    "privateEndpointId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Network/privateEndpoints', variables('privateEndpointName'))]"
+                    },
+                    "privateEndpointName": {
+                      "type": "string",
+                      "value": "[variables('privateEndpointName')]"
+                    },
+                    "privateDnsZoneId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDnsZoneName'))]"
+                    },
+                    "privateDnsZoneName": {
+                      "type": "string",
+                      "value": "[parameters('privateDnsZoneName')]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-keyvault')]",
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-network')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "avatar-bastion",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "namePrefix": {
+                    "value": "[parameters('namePrefix')]"
+                  },
+                  "bastionSubnetId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.bastionSubnetId.value]"
+                  },
+                  "tags": {
+                    "value": "[parameters('tags')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.41.2.15936",
+                      "templateHash": "6454276698229452787"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Region."
+                      }
+                    },
+                    "namePrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Common name prefix."
+                      }
+                    },
+                    "bastionSubnetId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "AzureBastionSubnet ID (must be at least /26)."
+                      }
+                    },
+                    "tags": {
+                      "type": "object",
+                      "defaultValue": {},
+                      "metadata": {
+                        "description": "Resource tags."
+                      }
+                    }
+                  },
+                  "variables": {
+                    "bastionName": "[format('{0}-bastion', parameters('namePrefix'))]",
+                    "pipName": "[format('{0}-bastion-pip', parameters('namePrefix'))]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/publicIPAddresses",
+                      "apiVersion": "2024-01-01",
+                      "name": "[variables('pipName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "sku": {
+                        "name": "Standard"
+                      },
+                      "properties": {
+                        "publicIPAllocationMethod": "Static"
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Network/bastionHosts",
+                      "apiVersion": "2024-01-01",
+                      "name": "[variables('bastionName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "sku": {
+                        "name": "Basic"
+                      },
+                      "properties": {
+                        "ipConfigurations": [
+                          {
+                            "name": "IpConf",
+                            "properties": {
+                              "subnet": {
+                                "id": "[parameters('bastionSubnetId')]"
+                              },
+                              "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                      ]
+                    }
+                  ],
+                  "outputs": {
+                    "bastionId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Network/bastionHosts', variables('bastionName'))]"
+                    },
+                    "bastionName": {
+                      "type": "string",
+                      "value": "[variables('bastionName')]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-network')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "avatar-vmss",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "vmssName": {
+                    "value": "[take(replace(parameters('namePrefix'), '-', ''), 12)]"
+                  },
+                  "instanceCount": {
+                    "value": "[parameters('vmssInstanceCount')]"
+                  },
+                  "vmSize": {
+                    "value": "[parameters('vmSize')]"
+                  },
+                  "adminUsername": {
+                    "value": "[parameters('adminUsername')]"
+                  },
+                  "adminPassword": {
+                    "value": "[parameters('adminPassword')]"
+                  },
+                  "subnetId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.vmssSubnetId.value]"
+                  },
+                  "useLoadBalancer": {
+                    "value": "[parameters('useLoadBalancer')]"
+                  },
+                  "lbBackendPoolId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.lbBackendPoolId.value]"
+                  },
+                  "lbMediaNatPoolId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.lbMediaNatPoolId.value]"
+                  },
+                  "dnsLabelPrefix": {
+                    "value": "[parameters('vmssDnsLabelPrefix')]"
+                  },
+                  "bootstrapZipUrl": {
+                    "value": "[parameters('bootstrapZipUrl')]"
+                  },
+                  "installScriptUrl": {
+                    "value": "[parameters('installScriptUrl')]"
+                  },
+                  "installCertFromKeyVault": {
+                    "value": "[parameters('installCertFromKeyVault')]"
+                  },
+                  "keyVaultName": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-keyvault'), '2025-04-01').outputs.keyVaultName.value]"
+                  },
+                  "logAnalyticsWorkspaceId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-monitor'), '2025-04-01').outputs.workspaceId.value]"
+                  },
+                  "appInsightsConnectionString": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-monitor'), '2025-04-01').outputs.appInsightsConnectionString.value]"
+                  },
+                  "serviceFqdn": "[if(parameters('useLoadBalancer'), createObject('value', reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.lbFqdn.value), createObject('value', ''))]",
+                  "mediaNatStartPort": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.mediaNatStartPort.value]"
+                  },
+                  "voiceLiveEndpoint": {
+                    "value": "[format('https://{0}.services.ai.azure.com/', parameters('foundryAccountName'))]"
+                  },
+                  "agentName": {
+                    "value": "[parameters('agentName')]"
+                  },
+                  "agentVersion": {
+                    "value": "[parameters('agentVersion')]"
+                  },
+                  "foundryProjectName": {
+                    "value": "[parameters('foundryProjectName')]"
+                  },
+                  "azureTenantId": {
+                    "value": "[parameters('azureTenantId')]"
+                  },
+                  "voiceLiveApiVersion": {
+                    "value": "[parameters('voiceLiveApiVersion')]"
+                  },
+                  "voiceLiveVoice": {
+                    "value": "[parameters('voiceLiveVoice')]"
+                  },
+                  "avatarCharacter": {
+                    "value": "[parameters('avatarCharacter')]"
+                  },
+                  "avatarStyle": {
+                    "value": "[parameters('avatarStyle')]"
+                  },
+                  "avatarBackgroundImageUrl": {
+                    "value": "[parameters('avatarBackgroundImageUrl')]"
+                  },
+                  "avatarBackgroundColor": {
+                    "value": "[parameters('avatarBackgroundColor')]"
+                  },
+                  "agentLanguage": {
+                    "value": "[parameters('agentLanguage')]"
+                  },
+                  "cseRevision": {
+                    "value": "[parameters('cseRevision')]"
+                  },
+                  "tags": {
+                    "value": "[parameters('tags')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.41.2.15936",
+                      "templateHash": "9327801159230050917"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Region."
+                      }
+                    },
+                    "vmssName": {
+                      "type": "string",
+                      "maxLength": 15,
+                      "metadata": {
+                        "description": "VMSS name."
+                      }
+                    },
+                    "instanceCount": {
+                      "type": "int",
+                      "defaultValue": 1,
+                      "minValue": 1,
+                      "maxValue": 10,
+                      "metadata": {
+                        "description": "Instance count. 1 = no concurrency, 2 = hot-standby HA."
+                      }
+                    },
+                    "vmSize": {
+                      "type": "string",
+                      "defaultValue": "Standard_D4s_v5",
+                      "metadata": {
+                        "description": "VM SKU. Avatar rendering is CPU-bound; D4s_v5 minimum."
+                      }
+                    },
+                    "adminUsername": {
+                      "type": "string",
+                      "defaultValue": "azureuser",
+                      "metadata": {
+                        "description": "Local admin username (for Bastion-RDP break-glass)."
+                      }
+                    },
+                    "adminPassword": {
+                      "type": "securestring",
+                      "metadata": {
+                        "description": "Local admin password."
+                      }
+                    },
+                    "subnetId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Subnet ID (vmss subnet from the network module)."
+                      }
+                    },
+                    "useLoadBalancer": {
+                      "type": "bool",
+                      "defaultValue": true,
+                      "metadata": {
+                        "description": "Use Standard Load Balancer for inbound traffic (recommended). When false, each instance gets its own per-instance public IP — useful for diagnostics only."
+                      }
+                    },
+                    "lbBackendPoolId": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Standard LB backend pool ID. Required when useLoadBalancer = true."
+                      }
+                    },
+                    "lbMediaNatPoolId": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Standard LB inbound NAT pool ID for media (8445 per-instance). Required when useLoadBalancer = true."
+                      }
+                    },
+                    "dnsLabelPrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "DNS label prefix for the per-instance public IP (legacy mode only). Becomes <prefix>-<n>.<region>.cloudapp.azure.com."
+                      }
+                    },
+                    "bootstrapZipUrl": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Bootstrap blob URL (zip with bot binaries + sidecar). MI must be authorised on this account."
+                      }
+                    },
+                    "installScriptUrl": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "URL to install.ps1 (separate blob from the bot zip). MI must be authorised. Required when bootstrapZipUrl is set."
+                      }
+                    },
+                    "bootstrapCommand": {
+                      "type": "string",
+                      "defaultValue": "powershell.exe -ExecutionPolicy Unrestricted -File .\\install-latest.ps1",
+                      "metadata": {
+                        "description": "Custom Script Extension command line. Receives bootstrapZipUrl as %1. Filename must match the last URL segment of installScriptUrl (CSE saves downloads using the URL leaf name)."
+                      }
+                    },
+                    "keyVaultName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Key Vault name where bot-aad-secret etc. live (mounted via AKV VM extension)."
+                      }
+                    },
+                    "tlsCertSecretName": {
+                      "type": "string",
+                      "defaultValue": "bot-tls-cert",
+                      "metadata": {
+                        "description": "PFX-as-secret name in KV for the bot TLS cert (used when AppGw is disabled)."
+                      }
+                    },
+                    "installCertFromKeyVault": {
+                      "type": "bool",
+                      "defaultValue": true,
+                      "metadata": {
+                        "description": "Install the AzureKeyVault VM extension to sync the cert into LocalMachine\\My."
+                      }
+                    },
+                    "logAnalyticsWorkspaceId": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Log Analytics workspace ID for diag settings + monitoring agent."
+                      }
+                    },
+                    "appInsightsConnectionString": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "App Insights connection string (passed through to the apps as env var)."
+                      }
+                    },
+                    "serviceFqdn": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Public service FQDN that Microsoft Graph will hit for signaling and that the bot media SDK uses for its self-test. Typically the LB FQDN. Empty string disables the override."
+                      }
+                    },
+                    "mediaNatStartPort": {
+                      "type": "int",
+                      "defaultValue": 8445,
+                      "metadata": {
+                        "description": "First port in the LB media NAT pool. Bot reads its instance index and uses (mediaNatStartPort + index) as InstancePublicPort."
+                      }
+                    },
+                    "voiceLiveEndpoint": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Voice Live / Foundry endpoint used by avatar-sidecar."
+                      }
+                    },
+                    "agentName": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Hosted Foundry agent name used by avatar-sidecar."
+                      }
+                    },
+                    "agentVersion": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Hosted Foundry agent version used by avatar-sidecar. Empty means latest/routed version."
+                      }
+                    },
+                    "foundryProjectName": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Foundry project name used by avatar-sidecar."
+                      }
+                    },
+                    "azureTenantId": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Tenant ID used by sidecar token pinning."
+                      }
+                    },
+                    "voiceLiveApiVersion": {
+                      "type": "string",
+                      "defaultValue": "2026-01-01-preview",
+                      "metadata": {
+                        "description": "Voice Live API version used by avatar-sidecar."
+                      }
+                    },
+                    "voiceLiveVoice": {
+                      "type": "string",
+                      "defaultValue": "en-US-AvaMultilingualNeural",
+                      "metadata": {
+                        "description": "Azure voice name used by avatar-sidecar."
+                      }
+                    },
+                    "avatarCharacter": {
+                      "type": "string",
+                      "defaultValue": "lisa",
+                      "metadata": {
+                        "description": "Avatar character used by avatar-sidecar."
+                      }
+                    },
+                    "avatarStyle": {
+                      "type": "string",
+                      "defaultValue": "casual-sitting",
+                      "metadata": {
+                        "description": "Avatar style used by avatar-sidecar."
+                      }
+                    },
+                    "avatarBackgroundImageUrl": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Optional public HTTPS URL the Voice Live service can fetch to use as the avatar background image. Empty = use avatarBackgroundColor instead."
+                      }
+                    },
+                    "avatarBackgroundColor": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Optional CSS hex color (e.g. \"#00ff00\" or \"#FFFFFFFF\") used as the avatar background when no image URL is set. Empty = Voice Live default (transparent)."
+                      }
+                    },
+                    "agentLanguage": {
+                      "type": "string",
+                      "defaultValue": "en",
+                      "metadata": {
+                        "description": "Language hint used by avatar-sidecar."
+                      }
+                    },
+                    "cseRevision": {
+                      "type": "string",
+                      "defaultValue": "1",
+                      "metadata": {
+                        "description": "Bump this string to force CSE bootstrap to re-run on existing instances (e.g., after re-uploading install.ps1 or lisa-latest.zip with the same blob URL)."
+                      }
+                    },
+                    "tags": {
+                      "type": "object",
+                      "defaultValue": {},
+                      "metadata": {
+                        "description": "Resource tags."
+                      }
+                    }
+                  },
+                  "variables": {
+                    "nicName": "[format('{0}-nic', parameters('vmssName'))]",
+                    "ipConfigName": "[format('{0}-ipcfg', parameters('vmssName'))]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Compute/virtualMachineScaleSets",
+                      "apiVersion": "2024-07-01",
+                      "name": "[parameters('vmssName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "sku": {
+                        "name": "[parameters('vmSize')]",
+                        "tier": "Standard",
+                        "capacity": "[parameters('instanceCount')]"
+                      },
+                      "identity": {
+                        "type": "SystemAssigned"
+                      },
+                      "properties": {
+                        "overprovision": false,
+                        "singlePlacementGroup": false,
+                        "upgradePolicy": {
+                          "mode": "Manual",
+                          "automaticOSUpgradePolicy": {
+                            "enableAutomaticOSUpgrade": false
+                          }
+                        },
+                        "automaticRepairsPolicy": {
+                          "enabled": false
+                        },
+                        "virtualMachineProfile": {
+                          "osProfile": {
+                            "computerNamePrefix": "[take(parameters('vmssName'), 9)]",
+                            "adminUsername": "[parameters('adminUsername')]",
+                            "adminPassword": "[parameters('adminPassword')]",
+                            "windowsConfiguration": {
+                              "enableAutomaticUpdates": true,
+                              "provisionVMAgent": true
+                            },
+                            "secrets": []
+                          },
+                          "diagnosticsProfile": {
+                            "bootDiagnostics": {
+                              "enabled": true
+                            }
+                          },
+                          "storageProfile": {
+                            "imageReference": {
+                              "publisher": "MicrosoftWindowsServer",
+                              "offer": "WindowsServer",
+                              "sku": "2022-datacenter-azure-edition",
+                              "version": "latest"
+                            },
+                            "osDisk": {
+                              "createOption": "FromImage",
+                              "managedDisk": {
+                                "storageAccountType": "Premium_LRS"
+                              },
+                              "caching": "ReadWrite"
+                            }
+                          },
+                          "networkProfile": {
+                            "networkInterfaceConfigurations": [
+                              {
+                                "name": "[variables('nicName')]",
+                                "properties": {
+                                  "primary": true,
+                                  "ipConfigurations": [
+                                    {
+                                      "name": "[variables('ipConfigName')]",
+                                      "properties": "[union(createObject('subnet', createObject('id', parameters('subnetId'))), if(parameters('useLoadBalancer'), createObject('loadBalancerBackendAddressPools', createArray(createObject('id', parameters('lbBackendPoolId'))), 'loadBalancerInboundNatPools', createArray(createObject('id', parameters('lbMediaNatPoolId')))), createObject('publicIPAddressConfiguration', createObject('name', format('{0}-pip', parameters('vmssName')), 'properties', createObject('idleTimeoutInMinutes', 15, 'dnsSettings', createObject('domainNameLabel', parameters('dnsLabelPrefix'))), 'sku', createObject('name', 'Standard')))))]"
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "extensionProfile": {
+                            "extensions": "[concat(if(or(empty(parameters('bootstrapZipUrl')), empty(parameters('installScriptUrl'))), createArray(), createArray(createObject('name', 'avatar-bootstrap', 'properties', createObject('publisher', 'Microsoft.Compute', 'type', 'CustomScriptExtension', 'typeHandlerVersion', '1.10', 'autoUpgradeMinorVersion', true(), 'forceUpdateTag', uniqueString(parameters('bootstrapCommand'), parameters('installScriptUrl'), parameters('bootstrapZipUrl'), parameters('serviceFqdn'), string(parameters('mediaNatStartPort')), parameters('voiceLiveEndpoint'), parameters('agentName'), parameters('agentVersion'), parameters('foundryProjectName'), parameters('azureTenantId'), parameters('voiceLiveApiVersion'), parameters('voiceLiveVoice'), parameters('avatarCharacter'), parameters('avatarStyle'), parameters('avatarBackgroundImageUrl'), parameters('avatarBackgroundColor'), parameters('agentLanguage'), parameters('cseRevision')), 'settings', createObject('fileUris', createArray(parameters('installScriptUrl'))), 'protectedSettings', createObject('managedIdentity', createObject(), 'commandToExecute', format('{0} {1} {2} {3} \"{4}\" \"{5}\" {6} \"{7}\" \"{8}\" \"{9}\" \"{10}\" \"{11}\" \"{12}\" \"{13}\" \"{14}\" \"{15}\" \"{16}\" \"{17}\" \"{18}\"', parameters('bootstrapCommand'), parameters('bootstrapZipUrl'), parameters('keyVaultName'), parameters('tlsCertSecretName'), parameters('appInsightsConnectionString'), parameters('serviceFqdn'), parameters('mediaNatStartPort'), parameters('voiceLiveEndpoint'), parameters('agentName'), parameters('agentVersion'), parameters('foundryProjectName'), parameters('azureTenantId'), parameters('voiceLiveApiVersion'), parameters('voiceLiveVoice'), parameters('avatarCharacter'), parameters('avatarStyle'), parameters('agentLanguage'), parameters('avatarBackgroundImageUrl'), parameters('avatarBackgroundColor'))))))), if(parameters('installCertFromKeyVault'), createArray(createObject('name', 'KVVMExtensionForWindows', 'properties', createObject('publisher', 'Microsoft.Azure.KeyVault', 'type', 'KeyVaultForWindows', 'typeHandlerVersion', '3.0', 'autoUpgradeMinorVersion', true(), 'settings', createObject('secretsManagementSettings', createObject('pollingIntervalInS', '3600', 'certificateStoreName', 'MY', 'linkOnRenewal', false(), 'certificateStoreLocation', 'LocalMachine', 'requireInitialSync', true(), 'observedCertificates', createArray(format('https://{0}{1}/secrets/{2}', parameters('keyVaultName'), environment().suffixes.keyvaultDns, parameters('tlsCertSecretName')))), 'authenticationSettings', createObject('msiEndpoint', 'http://169.254.169.254/metadata/identity/oauth2/token'))))), createArray()), if(empty(parameters('logAnalyticsWorkspaceId')), createArray(), createArray(createObject('name', 'AzureMonitorWindowsAgent', 'properties', createObject('publisher', 'Microsoft.Azure.Monitor', 'type', 'AzureMonitorWindowsAgent', 'typeHandlerVersion', '1.0', 'autoUpgradeMinorVersion', true(), 'enableAutomaticUpgrade', true(), 'settings', createObject())))))]"
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "vmssId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('vmssName'))]"
+                    },
+                    "vmssName": {
+                      "type": "string",
+                      "value": "[parameters('vmssName')]"
+                    },
+                    "vmssPrincipalId": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('vmssName')), '2024-07-01', 'full').identity.principalId]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-keyvault')]",
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-monitor')]",
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-network')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "avatar-rbac",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "vmssPrincipalId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-vmss'), '2025-04-01').outputs.vmssPrincipalId.value]"
+                  },
+                  "keyVaultName": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-keyvault'), '2025-04-01').outputs.keyVaultName.value]"
+                  },
+                  "foundryAccountName": {
+                    "value": "[parameters('foundryAccountName')]"
+                  },
+                  "acrName": {
+                    "value": "[parameters('acrName')]"
+                  },
+                  "deployStorageAccountName": {
+                    "value": "[parameters('deployStorageAccountName')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.41.2.15936",
+                      "templateHash": "5072186864464918615"
+                    }
+                  },
+                  "parameters": {
+                    "vmssPrincipalId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "VMSS principal ID (system-assigned MI)."
+                      }
+                    },
+                    "keyVaultName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Existing Key Vault name in the same RG."
+                      }
+                    },
+                    "foundryAccountName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Existing Foundry (Cognitive Services) account name in the same RG."
+                      }
+                    },
+                    "acrName": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Existing ACR name. Empty = skip."
+                      }
+                    },
+                    "deployStorageAccountName": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Existing storage account name (deploy artifacts). Empty = skip."
+                      }
+                    }
+                  },
+                  "variables": {
+                    "roleAcrPull": "7f951dda-4ed3-4680-a7ca-43fe172d538d",
+                    "roleKvSecretsUser": "4633458b-17de-408a-b874-0445c86b69e6",
+                    "roleCognitiveServicesUser": "a97b65f3-24c7-4388-baec-2e87135dc908",
+                    "roleAzureAIUser": "53ca6127-db72-4b80-b1b0-d745d6d5456d",
+                    "roleStorageBlobDataReader": "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2022-04-01",
+                      "scope": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+                      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), parameters('vmssPrincipalId'), variables('roleKvSecretsUser'))]",
+                      "properties": {
+                        "principalId": "[parameters('vmssPrincipalId')]",
+                        "principalType": "ServicePrincipal",
+                        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleKvSecretsUser'))]"
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2022-04-01",
+                      "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
+                      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), parameters('vmssPrincipalId'), variables('roleCognitiveServicesUser'))]",
+                      "properties": {
+                        "principalId": "[parameters('vmssPrincipalId')]",
+                        "principalType": "ServicePrincipal",
+                        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleCognitiveServicesUser'))]"
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2022-04-01",
+                      "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
+                      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), parameters('vmssPrincipalId'), variables('roleAzureAIUser'))]",
+                      "properties": {
+                        "principalId": "[parameters('vmssPrincipalId')]",
+                        "principalType": "ServicePrincipal",
+                        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleAzureAIUser'))]"
+                      }
+                    },
+                    {
+                      "condition": "[not(empty(parameters('acrName')))]",
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2022-04-01",
+                      "scope": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]",
+                      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName')), parameters('vmssPrincipalId'), variables('roleAcrPull'))]",
+                      "properties": {
+                        "principalId": "[parameters('vmssPrincipalId')]",
+                        "principalType": "ServicePrincipal",
+                        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleAcrPull'))]"
+                      }
+                    },
+                    {
+                      "condition": "[not(empty(parameters('deployStorageAccountName')))]",
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2022-04-01",
+                      "scope": "[resourceId('Microsoft.Storage/storageAccounts', parameters('deployStorageAccountName'))]",
+                      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', parameters('deployStorageAccountName')), parameters('vmssPrincipalId'), variables('roleStorageBlobDataReader'))]",
+                      "properties": {
+                        "principalId": "[parameters('vmssPrincipalId')]",
+                        "principalType": "ServicePrincipal",
+                        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleStorageBlobDataReader'))]"
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-keyvault')]",
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-vmss')]"
+              ]
+            },
+            {
+              "condition": "[parameters('enableAppGateway')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "avatar-appgw",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "namePrefix": {
+                    "value": "[parameters('namePrefix')]"
+                  },
+                  "subnetId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.appGwSubnetId.value]"
+                  },
+                  "userAssignedIdentityId": {
+                    "value": "[parameters('appGwIdentityId')]"
+                  },
+                  "kvCertId": {
+                    "value": "[parameters('appGwKvCertId')]"
+                  },
+                  "dnsLabelPrefix": {
+                    "value": "[parameters('appGwDnsLabelPrefix')]"
+                  },
+                  "tags": {
+                    "value": "[parameters('tags')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.41.2.15936",
+                      "templateHash": "11524066517821510113"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Region."
+                      }
+                    },
+                    "namePrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Common name prefix."
+                      }
+                    },
+                    "subnetId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "AppGw subnet ID."
+                      }
+                    },
+                    "backendPort": {
+                      "type": "int",
+                      "defaultValue": 443,
+                      "metadata": {
+                        "description": "Backend HTTPS port on the VMSS instances (signaling). Default 443."
+                      }
+                    },
+                    "backendProtocol": {
+                      "type": "string",
+                      "defaultValue": "Https",
+                      "allowedValues": [
+                        "Http",
+                        "Https"
+                      ],
+                      "metadata": {
+                        "description": "Backend protocol (Http or Https)."
+                      }
+                    },
+                    "userAssignedIdentityId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "User-assigned MI ID that has KV Secrets User on the cert source vault."
+                      }
+                    },
+                    "kvCertId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "KV secret URI of the PFX certificate (versionless URI recommended for auto-rotation). NOT the secret value — this is a reference URI."
+                      }
+                    },
+                    "dnsLabelPrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Public DNS label for the AppGw frontend IP."
+                      }
+                    },
+                    "tags": {
+                      "type": "object",
+                      "defaultValue": {},
+                      "metadata": {
+                        "description": "Resource tags."
+                      }
+                    }
+                  },
+                  "variables": {
+                    "appGwName": "[format('{0}-appgw', parameters('namePrefix'))]",
+                    "pipName": "[format('{0}-pip', variables('appGwName'))]",
+                    "wafPolicyName": "[format('{0}-waf', variables('appGwName'))]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/publicIPAddresses",
+                      "apiVersion": "2024-01-01",
+                      "name": "[variables('pipName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "sku": {
+                        "name": "Standard"
+                      },
+                      "properties": {
+                        "publicIPAllocationMethod": "Static",
+                        "dnsSettings": {
+                          "domainNameLabel": "[parameters('dnsLabelPrefix')]"
+                        }
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies",
+                      "apiVersion": "2024-01-01",
+                      "name": "[variables('wafPolicyName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "policySettings": {
+                          "requestBodyCheck": true,
+                          "maxRequestBodySizeInKb": 128,
+                          "fileUploadLimitInMb": 100,
+                          "state": "Enabled",
+                          "mode": "Prevention"
+                        },
+                        "managedRules": {
+                          "managedRuleSets": [
+                            {
+                              "ruleSetType": "OWASP",
+                              "ruleSetVersion": "3.2"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Network/applicationGateways",
+                      "apiVersion": "2024-01-01",
+                      "name": "[variables('appGwName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "identity": {
+                        "type": "UserAssigned",
+                        "userAssignedIdentities": {
+                          "[format('{0}', parameters('userAssignedIdentityId'))]": {}
+                        }
+                      },
+                      "properties": {
+                        "sku": {
+                          "name": "WAF_v2",
+                          "tier": "WAF_v2"
+                        },
+                        "autoscaleConfiguration": {
+                          "minCapacity": 1,
+                          "maxCapacity": 3
+                        },
+                        "firewallPolicy": {
+                          "id": "[resourceId('Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies', variables('wafPolicyName'))]"
+                        },
+                        "sslCertificates": [
+                          {
+                            "name": "kvCert",
+                            "properties": {
+                              "keyVaultSecretId": "[parameters('kvCertId')]"
+                            }
+                          }
+                        ],
+                        "gatewayIPConfigurations": [
+                          {
+                            "name": "gwip",
+                            "properties": {
+                              "subnet": {
+                                "id": "[parameters('subnetId')]"
+                              }
+                            }
+                          }
+                        ],
+                        "frontendIPConfigurations": [
+                          {
+                            "name": "feip",
+                            "properties": {
+                              "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                              }
+                            }
+                          }
+                        ],
+                        "frontendPorts": [
+                          {
+                            "name": "fe-443",
+                            "properties": {
+                              "port": 443
+                            }
+                          },
+                          {
+                            "name": "fe-80",
+                            "properties": {
+                              "port": 80
+                            }
+                          }
+                        ],
+                        "backendAddressPools": [
+                          {
+                            "name": "vmss-pool",
+                            "properties": {}
+                          }
+                        ],
+                        "backendHttpSettingsCollection": [
+                          {
+                            "name": "bot-https",
+                            "properties": {
+                              "port": "[parameters('backendPort')]",
+                              "protocol": "[parameters('backendProtocol')]",
+                              "cookieBasedAffinity": "Disabled",
+                              "requestTimeout": 30,
+                              "probe": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/probes', variables('appGwName'), 'health')]"
+                              },
+                              "pickHostNameFromBackendAddress": true
+                            }
+                          }
+                        ],
+                        "httpListeners": [
+                          {
+                            "name": "https-listener",
+                            "properties": {
+                              "frontendIPConfiguration": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', variables('appGwName'), 'feip')]"
+                              },
+                              "frontendPort": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', variables('appGwName'), 'fe-443')]"
+                              },
+                              "protocol": "Https",
+                              "sslCertificate": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/sslCertificates', variables('appGwName'), 'kvCert')]"
+                              },
+                              "requireServerNameIndication": false
+                            }
+                          },
+                          {
+                            "name": "http-listener",
+                            "properties": {
+                              "frontendIPConfiguration": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', variables('appGwName'), 'feip')]"
+                              },
+                              "frontendPort": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', variables('appGwName'), 'fe-80')]"
+                              },
+                              "protocol": "Http"
+                            }
+                          }
+                        ],
+                        "requestRoutingRules": [
+                          {
+                            "name": "https-rule",
+                            "properties": {
+                              "ruleType": "Basic",
+                              "priority": 100,
+                              "httpListener": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', variables('appGwName'), 'https-listener')]"
+                              },
+                              "backendAddressPool": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('appGwName'), 'vmss-pool')]"
+                              },
+                              "backendHttpSettings": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', variables('appGwName'), 'bot-https')]"
+                              }
+                            }
+                          },
+                          {
+                            "name": "http-redirect-rule",
+                            "properties": {
+                              "ruleType": "Basic",
+                              "priority": 110,
+                              "httpListener": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', variables('appGwName'), 'http-listener')]"
+                              },
+                              "redirectConfiguration": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/redirectConfigurations', variables('appGwName'), 'http-to-https')]"
+                              }
+                            }
+                          }
+                        ],
+                        "redirectConfigurations": [
+                          {
+                            "name": "http-to-https",
+                            "properties": {
+                              "redirectType": "Permanent",
+                              "targetListener": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', variables('appGwName'), 'https-listener')]"
+                              },
+                              "includePath": true,
+                              "includeQueryString": true
+                            }
+                          }
+                        ],
+                        "probes": [
+                          {
+                            "name": "health",
+                            "properties": {
+                              "protocol": "[parameters('backendProtocol')]",
+                              "path": "/health",
+                              "interval": 30,
+                              "timeout": 30,
+                              "unhealthyThreshold": 3,
+                              "pickHostNameFromBackendHttpSettings": true,
+                              "match": {
+                                "statusCodes": [
+                                  "200-399"
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "enableHttp2": true
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]",
+                        "[resourceId('Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies', variables('wafPolicyName'))]"
+                      ]
+                    }
+                  ],
+                  "outputs": {
+                    "backendPoolId": {
+                      "type": "string",
+                      "value": "[format('{0}/backendAddressPools/vmss-pool', resourceId('Microsoft.Network/applicationGateways', variables('appGwName')))]"
+                    },
+                    "appGwId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Network/applicationGateways', variables('appGwName'))]"
+                    },
+                    "appGwName": {
+                      "type": "string",
+                      "value": "[variables('appGwName')]"
+                    },
+                    "frontendFqdn": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName')), '2024-01-01').dnsSettings.fqdn]"
+                    },
+                    "frontendIp": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName')), '2024-01-01').ipAddress]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-network')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "avatar-diagnostics",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "workspaceId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-monitor'), '2025-04-01').outputs.workspaceId.value]"
+                  },
+                  "keyVaultName": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-keyvault'), '2025-04-01').outputs.keyVaultName.value]"
+                  },
+                  "vmssName": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-vmss'), '2025-04-01').outputs.vmssName.value]"
+                  },
+                  "appGwName": "[if(parameters('enableAppGateway'), createObject('value', reference(resourceId('Microsoft.Resources/deployments', 'avatar-appgw'), '2025-04-01').outputs.appGwName.value), createObject('value', ''))]"
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.41.2.15936",
+                      "templateHash": "15073984042963864435"
+                    }
+                  },
+                  "parameters": {
+                    "workspaceId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Log Analytics workspace ID."
+                      }
+                    },
+                    "keyVaultName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Key Vault name."
+                      }
+                    },
+                    "vmssName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "VMSS name."
+                      }
+                    },
+                    "appGwName": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "App Gateway name. Empty to skip."
+                      }
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Insights/diagnosticSettings",
+                      "apiVersion": "2021-05-01-preview",
+                      "scope": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+                      "name": "avatar-diag",
+                      "properties": {
+                        "workspaceId": "[parameters('workspaceId')]",
+                        "logs": [
+                          {
+                            "categoryGroup": "audit",
+                            "enabled": true
+                          },
+                          {
+                            "categoryGroup": "allLogs",
+                            "enabled": true
+                          }
+                        ],
+                        "metrics": [
+                          {
+                            "category": "AllMetrics",
+                            "enabled": true
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Insights/diagnosticSettings",
+                      "apiVersion": "2021-05-01-preview",
+                      "scope": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('vmssName'))]",
+                      "name": "avatar-diag",
+                      "properties": {
+                        "workspaceId": "[parameters('workspaceId')]",
+                        "metrics": [
+                          {
+                            "category": "AllMetrics",
+                            "enabled": true
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "condition": "[not(empty(parameters('appGwName')))]",
+                      "type": "Microsoft.Insights/diagnosticSettings",
+                      "apiVersion": "2021-05-01-preview",
+                      "scope": "[resourceId('Microsoft.Network/applicationGateways', parameters('appGwName'))]",
+                      "name": "avatar-diag",
+                      "properties": {
+                        "workspaceId": "[parameters('workspaceId')]",
+                        "logs": [
+                          {
+                            "categoryGroup": "allLogs",
+                            "enabled": true
+                          }
+                        ],
+                        "metrics": [
+                          {
+                            "category": "AllMetrics",
+                            "enabled": true
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-appgw')]",
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-keyvault')]",
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-monitor')]",
+                "[resourceId('Microsoft.Resources/deployments', 'avatar-vmss')]"
+              ]
+            }
+          ],
+          "outputs": {
+            "vmssName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-vmss'), '2025-04-01').outputs.vmssName.value]"
+            },
+            "keyVaultName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-keyvault'), '2025-04-01').outputs.keyVaultName.value]"
+            },
+            "keyVaultUri": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-keyvault'), '2025-04-01').outputs.keyVaultUri.value]"
+            },
+            "keyVaultPrivateEndpointId": {
+              "type": "string",
+              "value": "[if(parameters('enableKeyVaultPrivateEndpoint'), reference(resourceId('Microsoft.Resources/deployments', 'avatar-kv-private-endpoint'), '2025-04-01').outputs.privateEndpointId.value, '')]"
+            },
+            "keyVaultPrivateDnsZoneId": {
+              "type": "string",
+              "value": "[if(parameters('enableKeyVaultPrivateEndpoint'), reference(resourceId('Microsoft.Resources/deployments', 'avatar-kv-private-endpoint'), '2025-04-01').outputs.privateDnsZoneId.value, '')]"
+            },
+            "bastionName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-bastion'), '2025-04-01').outputs.bastionName.value]"
+            },
+            "workspaceId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-monitor'), '2025-04-01').outputs.workspaceId.value]"
+            },
+            "appInsightsConnectionString": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-monitor'), '2025-04-01').outputs.appInsightsConnectionString.value]"
+            },
+            "appGwFqdn": {
+              "type": "string",
+              "value": "[if(parameters('enableAppGateway'), reference(resourceId('Microsoft.Resources/deployments', 'avatar-appgw'), '2025-04-01').outputs.frontendFqdn.value, '')]"
+            },
+            "lbFqdn": {
+              "type": "string",
+              "value": "[if(parameters('useLoadBalancer'), reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.lbFqdn.value, '')]"
+            },
+            "lbPublicIp": {
+              "type": "string",
+              "value": "[if(parameters('useLoadBalancer'), reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.lbPublicIp.value, '')]"
+            },
+            "mediaNatStartPort": {
+              "type": "int",
+              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'avatar-network'), '2025-04-01').outputs.mediaNatStartPort.value]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('foundryProjectName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ]
     }
   ],
   "outputs": {
     "foundryEndpoint": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), '2024-10-01').endpoint]"
+      "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), '2025-04-01-preview').endpoint]"
     },
     "foundryProjectEndpoint": {
       "type": "string",
-      "value": "[format('{0}api/projects/{1}', reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), '2024-10-01').endpoint, parameters('foundryProjectName'))]"
+      "value": "[format('{0}api/projects/{1}', reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), '2025-04-01-preview').endpoint, parameters('foundryProjectName'))]"
     },
     "foundryAccountName": {
       "type": "string",
@@ -297,6 +3343,14 @@
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').primaryEndpoints.blob]"
     },
+    "costTableName": {
+      "type": "string",
+      "value": "[parameters('costTableName')]"
+    },
+    "costTableEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').primaryEndpoints.table]"
+    },
     "searchServiceName": {
       "type": "string",
       "value": "[parameters('searchServiceName')]"
@@ -308,6 +3362,34 @@
     "searchIndexName": {
       "type": "string",
       "value": "<SEARCH_INDEX_NAME>"
+    },
+    "acsName": {
+      "type": "string",
+      "value": "[parameters('acsName')]"
+    },
+    "acsImmutableResourceId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Communication/communicationServices', parameters('acsName')), '2023-04-01').immutableResourceId]"
+    },
+    "acrName": {
+      "type": "string",
+      "value": "[if(parameters('deployAcr'), parameters('acrName'), parameters('acrName'))]"
+    },
+    "acrLoginServer": {
+      "type": "string",
+      "value": "[if(parameters('deployAcr'), reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName')), '2023-11-01-preview').loginServer, '')]"
+    },
+    "artifactsContainer": {
+      "type": "string",
+      "value": "agent-artifacts"
+    },
+    "vmssName": {
+      "type": "string",
+      "value": "[if(parameters('deployAvatarStack'), reference(resourceId('Microsoft.Resources/deployments', 'avatar-stack'), '2025-04-01').outputs.vmssName.value, '')]"
+    },
+    "keyVaultName": {
+      "type": "string",
+      "value": "[if(parameters('deployAvatarStack'), reference(resourceId('Microsoft.Resources/deployments', 'avatar-stack'), '2025-04-01').outputs.keyVaultName.value, '')]"
     },
     "location": {
       "type": "string",

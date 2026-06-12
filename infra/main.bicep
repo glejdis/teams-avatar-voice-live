@@ -26,6 +26,12 @@ param blobContainerName string = 'hr-policies'
 @description('Optional principalId of the GitHub Actions OIDC UAMI. When set, gets Storage Blob Data Contributor on the storage account so the agent-deploy workflow can upload artifacts via AAD (--auth-mode login).')
 param deployerPrincipalId string = ''
 
+@description('Name of the Azure Table that stores per-call cost records (read by the costboard dashboard).')
+param costTableName string = 'callcosts'
+
+@description('Extra principalIds to grant Storage Table Data Contributor on the cost table (e.g. the costboard dashboard identity, the VMSS user-assigned identity, or a local developer objectId). The deployer principal (when set) is granted automatically.')
+param costStorePrincipalIds array = []
+
 @description('Azure AI Search service name.')
 param searchServiceName string = '${prefix}-search-${uniqueString(resourceGroup().id)}'
 
@@ -212,6 +218,40 @@ resource raDeployerBlobContributor 'Microsoft.Authorization/roleAssignments@2022
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Cost telemetry table (per-call cost records, written by every transport's
+// CostSink in core/cost.py and read by the costboard dashboard).
+// ─────────────────────────────────────────────────────────────────────────────
+resource tableService 'Microsoft.Storage/storageAccounts/tableServices@2023-05-01' = {
+  parent: storage
+  name: 'default'
+  properties: {}
+}
+
+resource costTable 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
+  parent: tableService
+  name: costTableName
+  properties: {}
+}
+
+// Storage Table Data Contributor — lets the configured identities upsert/read
+// cost rows via AAD (Managed Identity / DefaultAzureCredential). Granted to the
+// deployer principal (when set) plus any extra principalIds supplied.
+var roleStorageTableDataContributorId = '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
+var costTablePrincipalIds = union(
+  empty(deployerPrincipalId) ? [] : [deployerPrincipalId],
+  costStorePrincipalIds
+)
+resource raCostTableContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for pid in costTablePrincipalIds: {
+  name: guid(storage.id, string(pid), roleStorageTableDataContributorId)
+  scope: storage
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleStorageTableDataContributorId)
+    principalId: pid
+    principalType: 'ServicePrincipal'
+  }
+}]
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Azure AI Search
 // ─────────────────────────────────────────────────────────────────────────────
 resource search 'Microsoft.Search/searchServices@2024-06-01-preview' = {
@@ -335,6 +375,7 @@ module avatarStack 'avatar-stack.bicep' = if (deployAvatarStack) {
     location: location
     namePrefix: '${prefix}-avatar'
     foundryAccountName: foundry.name
+    foundryProjectName: project.name
     acrName: deployAcr ? acr.name : acrName
     deployStorageAccountName: storage.name
     bootstrapZipUrl: avatarBootstrapZipUrl
@@ -363,6 +404,8 @@ output embeddingDeploymentName string = embeddingModel.name
 output storageAccountName string = storage.name
 output blobContainerName string = hrPoliciesContainer.name
 output storageEndpoint string = storage.properties.primaryEndpoints.blob
+output costTableName string = costTable.name
+output costTableEndpoint string = storage.properties.primaryEndpoints.table
 
 output searchServiceName string = search.name
 output searchEndpoint string = 'https://${search.name}.search.windows.net'

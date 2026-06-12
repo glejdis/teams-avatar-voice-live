@@ -1,0 +1,3637 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://github.com/glejdis/teams_avatar_voice_live",
+  "elements": [
+    {
+      "type": "text",
+      "id": "title",
+      "x": 40,
+      "y": 20,
+      "width": 1660,
+      "height": 44,
+      "text": "teams_avatar_voice_live \u2014 End-to-End Architecture (v0.1.3)",
+      "fontSize": 26,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "top"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "x": 40,
+      "y": 70,
+      "width": 1660,
+      "height": 28,
+      "text": "AI agent joins a Microsoft Teams meeting as a video avatar driven by Azure Voice Live",
+      "fontSize": 14,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "top"
+    },
+    {
+      "type": "rectangle",
+      "id": "ci_box",
+      "x": 40,
+      "y": 120,
+      "width": 1660,
+      "height": 80,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 3,
+      "strokeStyle": "dashed",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 567767390,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "ci_box__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "ci_box__t",
+      "x": 40,
+      "y": 120,
+      "width": 1660,
+      "height": 80,
+      "text": "Build & Deploy  \u00b7  GitHub Actions (OIDC \u2192 Azure)",
+      "fontSize": 14,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "top",
+      "containerId": "ci_box",
+      "seed": 28245673
+    },
+    {
+      "type": "rectangle",
+      "id": "wf_infra",
+      "x": 80,
+      "y": 150,
+      "width": 320,
+      "height": 40,
+      "strokeColor": "#495057",
+      "backgroundColor": "#dee2e6",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 714929929,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "wf_infra__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "wf_infra__t",
+      "x": 80,
+      "y": 150,
+      "width": 320,
+      "height": 40,
+      "text": ".github/workflows/infra-deploy.yml\nBicep what-if + apply",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "wf_infra",
+      "seed": 396986770
+    },
+    {
+      "type": "rectangle",
+      "id": "wf_agent",
+      "x": 420,
+      "y": 150,
+      "width": 320,
+      "height": 40,
+      "strokeColor": "#495057",
+      "backgroundColor": "#dee2e6",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1981216629,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "wf_agent__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "wf_agent__t",
+      "x": 420,
+      "y": 150,
+      "width": 320,
+      "height": 40,
+      "text": ".github/workflows/agent-deploy.yml\nbuilds hosted-agent + VMSS artifact zip",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "wf_agent",
+      "seed": 1616000862
+    },
+    {
+      "type": "rectangle",
+      "id": "wf_secret",
+      "x": 760,
+      "y": 150,
+      "width": 320,
+      "height": 40,
+      "strokeColor": "#495057",
+      "backgroundColor": "#dee2e6",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1530318411,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "wf_secret__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "wf_secret__t",
+      "x": 760,
+      "y": 150,
+      "width": 320,
+      "height": 40,
+      "text": ".github/workflows/secret-rotation.yml\nrotates KV secrets on cron",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "wf_secret",
+      "seed": 1763055149
+    },
+    {
+      "type": "rectangle",
+      "id": "oidc",
+      "x": 1100,
+      "y": 150,
+      "width": 280,
+      "height": 40,
+      "strokeColor": "#495057",
+      "backgroundColor": "#dee2e6",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1216737778,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "oidc__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "oidc__t",
+      "x": 1100,
+      "y": 150,
+      "width": 280,
+      "height": 40,
+      "text": "scripts/bootstrap-oidc.ps1\nfederated UAMI per (env, repo)",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "oidc",
+      "seed": 232509153
+    },
+    {
+      "type": "rectangle",
+      "id": "acr_push",
+      "x": 1400,
+      "y": 150,
+      "width": 280,
+      "height": 40,
+      "strokeColor": "#0078d4",
+      "backgroundColor": "#cfe4fa",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 828899704,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "acr_push__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "acr_push__t",
+      "x": 1400,
+      "y": 150,
+      "width": 280,
+      "height": 40,
+      "text": "Azure Container Registry\nhosted-agent image + bot image",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "acr_push",
+      "seed": 2120321929
+    },
+    {
+      "type": "rectangle",
+      "id": "operator",
+      "x": 60,
+      "y": 320,
+      "width": 160,
+      "height": 70,
+      "strokeColor": "#e67700",
+      "backgroundColor": "#ffe8cc",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 514071409,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "operator__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "operator__t",
+      "x": 60,
+      "y": 320,
+      "width": 160,
+      "height": 70,
+      "text": "Operator\n(human)",
+      "fontSize": 14,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "operator",
+      "seed": 1222643141
+    },
+    {
+      "type": "rectangle",
+      "id": "launcher_box",
+      "x": 260,
+      "y": 240,
+      "width": 720,
+      "height": 320,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 3,
+      "strokeStyle": "dashed",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1399148727,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "launcher_box__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "launcher_box__t",
+      "x": 260,
+      "y": 240,
+      "width": 720,
+      "height": 320,
+      "text": "launcher/  (Python CLI, optional FastAPI wrapper)\n`pip install -e .[web]`",
+      "fontSize": 14,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "top",
+      "containerId": "launcher_box",
+      "seed": 1028746073
+    },
+    {
+      "type": "rectangle",
+      "id": "cli",
+      "x": 300,
+      "y": 300,
+      "width": 200,
+      "height": 70,
+      "strokeColor": "#1864ab",
+      "backgroundColor": "#a5d8ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 405067239,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "cli__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "cli__t",
+      "x": 300,
+      "y": 300,
+      "width": 200,
+      "height": 70,
+      "text": "cli.py\npython -m launcher\nschedule | dispatch",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "cli",
+      "seed": 240773176
+    },
+    {
+      "type": "rectangle",
+      "id": "web",
+      "x": 520,
+      "y": 300,
+      "width": 200,
+      "height": 70,
+      "strokeColor": "#1864ab",
+      "backgroundColor": "#a5d8ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 315403135,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "web__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "web__t",
+      "x": 520,
+      "y": 300,
+      "width": 200,
+      "height": 70,
+      "text": "web.py\nuvicorn launcher.web:app\nPOST /api/schedule",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "web",
+      "seed": 1153962281
+    },
+    {
+      "type": "rectangle",
+      "id": "graphcli",
+      "x": 300,
+      "y": 390,
+      "width": 200,
+      "height": 90,
+      "strokeColor": "#1864ab",
+      "backgroundColor": "#a5d8ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 835190903,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "graphcli__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "graphcli__t",
+      "x": 300,
+      "y": 390,
+      "width": 200,
+      "height": 90,
+      "text": "graph_client.py\ncreate_teams_meeting\nsend_interview_invite\n(BRAND_NAME env var)",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "graphcli",
+      "seed": 1432897980
+    },
+    {
+      "type": "rectangle",
+      "id": "dispatch",
+      "x": 520,
+      "y": 390,
+      "width": 200,
+      "height": 90,
+      "strokeColor": "#1864ab",
+      "backgroundColor": "#a5d8ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 2101913702,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "dispatch__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "dispatch__t",
+      "x": 520,
+      "y": 390,
+      "width": 200,
+      "height": 90,
+      "text": "bot_dispatcher.py\ndispatch(join_url, mode=)\n\u2192 graph_bot or\n   browser_webrtc",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "dispatch",
+      "seed": 245868191
+    },
+    {
+      "type": "rectangle",
+      "id": "core",
+      "x": 740,
+      "y": 300,
+      "width": 220,
+      "height": 180,
+      "strokeColor": "#1864ab",
+      "backgroundColor": "#a5d8ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 252941172,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "core__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "core__t",
+      "x": 740,
+      "y": 300,
+      "width": 220,
+      "height": 180,
+      "text": "core/\nclients.py \u2014 Foundry +\n  Azure OpenAI client factories\nconfig.py \u2014 AgentConfig\n(DefaultAzureCredential)",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "core",
+      "seed": 1207021077
+    },
+    {
+      "type": "rectangle",
+      "id": "msgraph",
+      "x": 1020,
+      "y": 320,
+      "width": 240,
+      "height": 90,
+      "strokeColor": "#862e9c",
+      "backgroundColor": "#f3d9fa",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 880237980,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "msgraph__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "msgraph__t",
+      "x": 1020,
+      "y": 320,
+      "width": 240,
+      "height": 90,
+      "text": "Microsoft Graph API\n/users/{org}/onlineMeetings\n/users/{org}/sendMail\ncommunications.calls",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "msgraph",
+      "seed": 780525021
+    },
+    {
+      "type": "rectangle",
+      "id": "inbox",
+      "x": 1310,
+      "y": 280,
+      "width": 200,
+      "height": 70,
+      "strokeColor": "#0078d4",
+      "backgroundColor": "#cfe4fa",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 83225395,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "inbox__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "inbox__t",
+      "x": 1310,
+      "y": 280,
+      "width": 200,
+      "height": 70,
+      "text": "Invitee inbox\n(Outlook / Gmail / \u2026)",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "inbox",
+      "seed": 2082675017
+    },
+    {
+      "type": "rectangle",
+      "id": "invitee",
+      "x": 1310,
+      "y": 380,
+      "width": 200,
+      "height": 80,
+      "strokeColor": "#e67700",
+      "backgroundColor": "#ffe8cc",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1858042105,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "invitee__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "invitee__t",
+      "x": 1310,
+      "y": 380,
+      "width": 200,
+      "height": 80,
+      "text": "Invitee\n(human, clicks the\nTeams Join link)",
+      "fontSize": 13,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "invitee",
+      "seed": 677270810
+    },
+    {
+      "type": "rectangle",
+      "id": "ta_box",
+      "x": 40,
+      "y": 600,
+      "width": 820,
+      "height": 360,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 3,
+      "strokeStyle": "dashed",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 456041708,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "ta_box__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "ta_box__t",
+      "x": 40,
+      "y": 600,
+      "width": 820,
+      "height": 360,
+      "text": "Transport A \u2014 graph_bot  (production / VMSS)",
+      "fontSize": 14,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "top",
+      "containerId": "ta_box",
+      "seed": 756166075
+    },
+    {
+      "type": "rectangle",
+      "id": "app_gw",
+      "x": 80,
+      "y": 660,
+      "width": 340,
+      "height": 70,
+      "strokeColor": "#0078d4",
+      "backgroundColor": "#cfe4fa",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 90009433,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "app_gw__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "app_gw__t",
+      "x": 80,
+      "y": 660,
+      "width": 340,
+      "height": 70,
+      "text": "App Gateway (WAF) + TLS\npublic FQDN  =  BOT_JOIN_ENDPOINT",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "app_gw",
+      "seed": 20423950
+    },
+    {
+      "type": "rectangle",
+      "id": "ta_auth",
+      "x": 440,
+      "y": 660,
+      "width": 380,
+      "height": 70,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "#99e9f2",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1667142342,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "ta_auth__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "ta_auth__t",
+      "x": 440,
+      "y": 660,
+      "width": 380,
+      "height": 70,
+      "text": "POST /joinCall + X-Bot-Auth\n{joinURL, displayName, sessionId}",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "ta_auth",
+      "seed": 1658374550
+    },
+    {
+      "type": "rectangle",
+      "id": "vmss_outer",
+      "x": 80,
+      "y": 760,
+      "width": 740,
+      "height": 180,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 3,
+      "strokeStyle": "dashed",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1951663914,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "vmss_outer__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "vmss_outer__t",
+      "x": 80,
+      "y": 760,
+      "width": 740,
+      "height": 180,
+      "text": "VMSS  (Windows Server 2022, NSSM-managed services)",
+      "fontSize": 13,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "top",
+      "containerId": "vmss_outer",
+      "seed": 1005515356
+    },
+    {
+      "type": "rectangle",
+      "id": "echo_bot",
+      "x": 100,
+      "y": 810,
+      "width": 350,
+      "height": 110,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "#99e9f2",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1571777295,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "echo_bot__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "echo_bot__t",
+      "x": 100,
+      "y": 810,
+      "width": 350,
+      "height": 110,
+      "text": "C# Echo Bot  (bot/ submodule)\nMicrosoft.Skype.Bots.Media\n\u2192 places Graph call\n\u2192 joins as 1st-class Teams participant",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "echo_bot",
+      "seed": 1210388744
+    },
+    {
+      "type": "rectangle",
+      "id": "sidecar",
+      "x": 460,
+      "y": 810,
+      "width": 350,
+      "height": 110,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "#99e9f2",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1793374603,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "sidecar__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "sidecar__t",
+      "x": 460,
+      "y": 810,
+      "width": 350,
+      "height": 110,
+      "text": "Python avatar-sidecar  (bot/avatar-sidecar/)\nbridges Voice Live audio frames\n\u2194 Graph Media SDK\nNSSM service: lisa-sidecar",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "sidecar",
+      "seed": 1477333998
+    },
+    {
+      "type": "rectangle",
+      "id": "tb_box",
+      "x": 880,
+      "y": 600,
+      "width": 820,
+      "height": 360,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 3,
+      "strokeStyle": "dashed",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 431491454,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "tb_box__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "tb_box__t",
+      "x": 880,
+      "y": 600,
+      "width": 820,
+      "height": 360,
+      "text": "Transport B \u2014 browser_webrtc  (local dev / 30-sec demo)",
+      "fontSize": 14,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "top",
+      "containerId": "tb_box",
+      "seed": 1253098705
+    },
+    {
+      "type": "rectangle",
+      "id": "browser_app",
+      "x": 920,
+      "y": 660,
+      "width": 340,
+      "height": 70,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "#99e9f2",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 107508093,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "browser_app__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "browser_app__t",
+      "x": 920,
+      "y": 660,
+      "width": 340,
+      "height": 70,
+      "text": "browser-fallback/app.py\nFastAPI on http://localhost:3000\nstatic/ operator UI",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "browser_app",
+      "seed": 1635108819
+    },
+    {
+      "type": "rectangle",
+      "id": "inv_json",
+      "x": 1280,
+      "y": 660,
+      "width": 380,
+      "height": 70,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "#99e9f2",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1797925691,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "inv_json__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "inv_json__t",
+      "x": 1280,
+      "y": 660,
+      "width": 380,
+      "height": 70,
+      "text": "browser-fallback/data/latest-invite.json\n(written by launcher \u00b7 polled by static page)",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "inv_json",
+      "seed": 551446875
+    },
+    {
+      "type": "rectangle",
+      "id": "op_browser_outer",
+      "x": 920,
+      "y": 760,
+      "width": 740,
+      "height": 180,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 3,
+      "strokeStyle": "dashed",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 681591129,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "op_browser_outer__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "op_browser_outer__t",
+      "x": 920,
+      "y": 760,
+      "width": 740,
+      "height": 180,
+      "text": "Operator browser tab  (Edge / Chrome on http://localhost:3000)",
+      "fontSize": 13,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "top",
+      "containerId": "op_browser_outer",
+      "seed": 1036267622
+    },
+    {
+      "type": "rectangle",
+      "id": "acs_sdk",
+      "x": 940,
+      "y": 810,
+      "width": 350,
+      "height": 110,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "#99e9f2",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1706333279,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "acs_sdk__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "acs_sdk__t",
+      "x": 940,
+      "y": 810,
+      "width": 350,
+      "height": 110,
+      "text": "ACS Web Calling SDK  (patched)\nrebuild-acs/ \u2014 getMediaStream fix\njoinMeeting as ACS guest\n(WebRTC media)",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "acs_sdk",
+      "seed": 1253555807
+    },
+    {
+      "type": "rectangle",
+      "id": "chroma",
+      "x": 1300,
+      "y": 810,
+      "width": 350,
+      "height": 110,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "#99e9f2",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 2118330214,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "chroma__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "chroma__t",
+      "x": 1300,
+      "y": 810,
+      "width": 350,
+      "height": 110,
+      "text": "Chroma-key canvas overlay\nAVATAR_CHROMA_* env vars\nlocal background composite\n(client-side only)",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "chroma",
+      "seed": 1659281327
+    },
+    {
+      "type": "rectangle",
+      "id": "teams",
+      "x": 420,
+      "y": 1000,
+      "width": 920,
+      "height": 80,
+      "strokeColor": "#5c2d91",
+      "backgroundColor": "#e8daee",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 654583763,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "teams__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "teams__t",
+      "x": 420,
+      "y": 1000,
+      "width": 920,
+      "height": 80,
+      "text": "Microsoft Teams meeting\nInvitee  \u2194  Avatar (Lisa)  \u2014  bidirectional audio + video",
+      "fontSize": 15,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "teams",
+      "seed": 1474892691
+    },
+    {
+      "type": "rectangle",
+      "id": "foundry_box",
+      "x": 200,
+      "y": 1120,
+      "width": 1360,
+      "height": 320,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 3,
+      "strokeStyle": "dashed",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 2042845781,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "foundry_box__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "foundry_box__t",
+      "x": 200,
+      "y": 1120,
+      "width": 1360,
+      "height": 320,
+      "text": "Foundry project  (Azure AI Services / hub)",
+      "fontSize": 14,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "top",
+      "containerId": "foundry_box",
+      "seed": 1640262342
+    },
+    {
+      "type": "rectangle",
+      "id": "voicelive",
+      "x": 240,
+      "y": 1170,
+      "width": 560,
+      "height": 80,
+      "strokeColor": "#2f9e44",
+      "backgroundColor": "#b2f2bb",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 999831491,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "voicelive__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "voicelive__t",
+      "x": 240,
+      "y": 1170,
+      "width": 560,
+      "height": 80,
+      "text": "Azure Voice Live\nreal-time speech-to-speech\non top of Azure OpenAI / Foundry",
+      "fontSize": 13,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "voicelive",
+      "seed": 2166409
+    },
+    {
+      "type": "rectangle",
+      "id": "acs_svc",
+      "x": 820,
+      "y": 1170,
+      "width": 720,
+      "height": 80,
+      "strokeColor": "#0078d4",
+      "backgroundColor": "#cfe4fa",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 216106724,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "acs_svc__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "acs_svc__t",
+      "x": 820,
+      "y": 1170,
+      "width": 720,
+      "height": 80,
+      "text": "Azure Communication Services (ACS)\nTeams meeting bridge for Transport B (browser path)",
+      "fontSize": 13,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "acs_svc",
+      "seed": 558467552
+    },
+    {
+      "type": "rectangle",
+      "id": "ha_outer",
+      "x": 240,
+      "y": 1270,
+      "width": 1300,
+      "height": 160,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 3,
+      "strokeStyle": "dashed",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 396525285,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "ha_outer__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "ha_outer__t",
+      "x": 240,
+      "y": 1270,
+      "width": 1300,
+      "height": 160,
+      "text": "hosted-agent container  (Foundry-hosted, port 8088, Responses protocol)",
+      "fontSize": 13,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "top",
+      "containerId": "ha_outer",
+      "seed": 1939999857
+    },
+    {
+      "type": "rectangle",
+      "id": "main_py",
+      "x": 260,
+      "y": 1320,
+      "width": 300,
+      "height": 100,
+      "strokeColor": "#2f9e44",
+      "backgroundColor": "#b2f2bb",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 512653070,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "main_py__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "main_py__t",
+      "x": 260,
+      "y": 1320,
+      "width": 300,
+      "height": 100,
+      "text": "main.py\nAgent factory\nregisters example tools\nEXPOSE 8088",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "main_py",
+      "seed": 381552529
+    },
+    {
+      "type": "rectangle",
+      "id": "personas",
+      "x": 580,
+      "y": 1320,
+      "width": 300,
+      "height": 100,
+      "strokeColor": "#2f9e44",
+      "backgroundColor": "#b2f2bb",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1104826536,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "personas__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "personas__t",
+      "x": 580,
+      "y": 1320,
+      "width": 300,
+      "height": 100,
+      "text": "personas/\nlisa.md (worked example)\ngeneric.md (starter)\nPERSONA_FILE env var",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "personas",
+      "seed": 1692583095
+    },
+    {
+      "type": "rectangle",
+      "id": "tools",
+      "x": 900,
+      "y": 1320,
+      "width": 300,
+      "height": 100,
+      "strokeColor": "#2f9e44",
+      "backgroundColor": "#b2f2bb",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 442454062,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "tools__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "tools__t",
+      "x": 900,
+      "y": 1320,
+      "width": 300,
+      "height": 100,
+      "text": "tools/\njob_requirements.py\n(example knowledge tool \u2014\nswap for your domain)",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "tools",
+      "seed": 1623295329
+    },
+    {
+      "type": "rectangle",
+      "id": "vcfg",
+      "x": 1220,
+      "y": 1320,
+      "width": 300,
+      "height": 100,
+      "strokeColor": "#2f9e44",
+      "backgroundColor": "#b2f2bb",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 209175824,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "vcfg__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "vcfg__t",
+      "x": 1220,
+      "y": 1320,
+      "width": 300,
+      "height": 100,
+      "text": "voice-live-config.json\nvoice / VAD / avatar\nattached as agent metadata\n(microsoft.voice-live.configuration)",
+      "fontSize": 12,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "vcfg",
+      "seed": 1290987435
+    },
+    {
+      "type": "rectangle",
+      "id": "infra_box",
+      "x": 40,
+      "y": 1470,
+      "width": 1660,
+      "height": 80,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 3,
+      "strokeStyle": "dashed",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 369783725,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "infra_box__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "infra_box__t",
+      "x": 40,
+      "y": 1470,
+      "width": 1660,
+      "height": 80,
+      "text": "Supporting Azure resources  (infra/  \u2014 Bicep)",
+      "fontSize": 14,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "top",
+      "containerId": "infra_box",
+      "seed": 1354579700
+    },
+    {
+      "type": "rectangle",
+      "id": "kv",
+      "x": 60,
+      "y": 1500,
+      "width": 270,
+      "height": 40,
+      "strokeColor": "#1971c2",
+      "backgroundColor": "#dbe4ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 2129611220,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "kv__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "kv__t",
+      "x": 60,
+      "y": 1500,
+      "width": 270,
+      "height": 40,
+      "text": "Key Vault  (private endpoint)\nbot client secret + TLS cert",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "kv",
+      "seed": 121497157
+    },
+    {
+      "type": "rectangle",
+      "id": "acr2",
+      "x": 340,
+      "y": 1500,
+      "width": 270,
+      "height": 40,
+      "strokeColor": "#1971c2",
+      "backgroundColor": "#dbe4ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 460531650,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "acr2__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "acr2__t",
+      "x": 340,
+      "y": 1500,
+      "width": 270,
+      "height": 40,
+      "text": "ACR  (image registry)\nhosted-agent + bot images",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "acr2",
+      "seed": 1209305610
+    },
+    {
+      "type": "rectangle",
+      "id": "stor",
+      "x": 620,
+      "y": 1500,
+      "width": 270,
+      "height": 40,
+      "strokeColor": "#1971c2",
+      "backgroundColor": "#dbe4ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 74125685,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "stor__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "stor__t",
+      "x": 620,
+      "y": 1500,
+      "width": 270,
+      "height": 40,
+      "text": "Storage Account\nagent-artifacts/<sha>.zip",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "stor",
+      "seed": 539872313
+    },
+    {
+      "type": "rectangle",
+      "id": "net",
+      "x": 900,
+      "y": 1500,
+      "width": 240,
+      "height": 40,
+      "strokeColor": "#1971c2",
+      "backgroundColor": "#dbe4ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1190577989,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "net__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "net__t",
+      "x": 900,
+      "y": 1500,
+      "width": 240,
+      "height": 40,
+      "text": "VNet + subnets\nNSGs \u00b7 service endpoints",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "net",
+      "seed": 614163039
+    },
+    {
+      "type": "rectangle",
+      "id": "bast",
+      "x": 1150,
+      "y": 1500,
+      "width": 240,
+      "height": 40,
+      "strokeColor": "#1971c2",
+      "backgroundColor": "#dbe4ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1891052553,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "bast__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "bast__t",
+      "x": 1150,
+      "y": 1500,
+      "width": 240,
+      "height": 40,
+      "text": "Bastion  (break-glass)\noff by default",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "bast",
+      "seed": 208198903
+    },
+    {
+      "type": "rectangle",
+      "id": "logs",
+      "x": 1400,
+      "y": 1500,
+      "width": 300,
+      "height": 40,
+      "strokeColor": "#1971c2",
+      "backgroundColor": "#dbe4ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1762905627,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "logs__t"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "logs__t",
+      "x": 1400,
+      "y": 1500,
+      "width": 300,
+      "height": 40,
+      "text": "Log Analytics + Alerts\nVMSS \u00b7 App Gw \u00b7 sidecar logs",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "logs",
+      "seed": 2040151013
+    },
+    {
+      "type": "arrow",
+      "id": "edge_0",
+      "x": 240.0,
+      "y": 170.0,
+      "width": 630.0,
+      "height": 1340.0,
+      "strokeColor": "#495057",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          630.0,
+          1340.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "wf_infra",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "infra_box",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1465375310
+    },
+    {
+      "type": "text",
+      "id": "edge_label_0",
+      "x": 485.0,
+      "y": 831.0,
+      "width": 140,
+      "height": 18,
+      "text": "what-if + apply",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 834886215
+    },
+    {
+      "type": "arrow",
+      "id": "edge_1",
+      "x": 580.0,
+      "y": 170.0,
+      "width": 310.0,
+      "height": 1180.0,
+      "strokeColor": "#495057",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          310.0,
+          1180.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "wf_agent",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "ha_outer",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1486670627
+    },
+    {
+      "type": "text",
+      "id": "edge_label_1",
+      "x": 665.0,
+      "y": 751.0,
+      "width": 140,
+      "height": 18,
+      "text": "build + push image",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 411352344
+    },
+    {
+      "type": "arrow",
+      "id": "edge_2",
+      "x": 580.0,
+      "y": 170.0,
+      "width": -130.0,
+      "height": 680.0,
+      "strokeColor": "#495057",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -130.0,
+          680.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "wf_agent",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "vmss_outer",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1683300852
+    },
+    {
+      "type": "text",
+      "id": "edge_label_2",
+      "x": 438.0,
+      "y": 501.0,
+      "width": 154,
+      "height": 18,
+      "text": "publishes artifact zip",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1988930636
+    },
+    {
+      "type": "arrow",
+      "id": "edge_3",
+      "x": 920.0,
+      "y": 170.0,
+      "width": -725.0,
+      "height": 1350.0,
+      "strokeColor": "#495057",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -725.0,
+          1350.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "wf_secret",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "kv",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1359327740
+    },
+    {
+      "type": "text",
+      "id": "edge_label_3",
+      "x": 487.5,
+      "y": 836.0,
+      "width": 140,
+      "height": 18,
+      "text": "rotates secrets",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1846525524
+    },
+    {
+      "type": "arrow",
+      "id": "edge_4",
+      "x": 1540.0,
+      "y": 170.0,
+      "width": -650.0,
+      "height": 1180.0,
+      "strokeColor": "#495057",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -650.0,
+          1180.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "acr_push",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "ha_outer",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 230208077
+    },
+    {
+      "type": "text",
+      "id": "edge_label_4",
+      "x": 1145.0,
+      "y": 751.0,
+      "width": 140,
+      "height": 18,
+      "text": "pulls image",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1695926245
+    },
+    {
+      "type": "arrow",
+      "id": "edge_5",
+      "x": 140.0,
+      "y": 355.0,
+      "width": 260.0,
+      "height": -20.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          260.0,
+          -20.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "operator",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "cli",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1402659224
+    },
+    {
+      "type": "text",
+      "id": "edge_label_5",
+      "x": 196.5,
+      "y": 336.0,
+      "width": 147,
+      "height": 18,
+      "text": "schedule --to alice@\u2026",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1023400280
+    },
+    {
+      "type": "arrow",
+      "id": "edge_6",
+      "x": 400.0,
+      "y": 335.0,
+      "width": 0.0,
+      "height": 100.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "cli",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "graphcli",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 585684674
+    },
+    {
+      "type": "arrow",
+      "id": "edge_7",
+      "x": 400.0,
+      "y": 335.0,
+      "width": 220.0,
+      "height": 100.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          220.0,
+          100.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "cli",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "dispatch",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 903341918
+    },
+    {
+      "type": "arrow",
+      "id": "edge_8",
+      "x": 620.0,
+      "y": 335.0,
+      "width": -220.0,
+      "height": 100.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -220.0,
+          100.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "web",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "graphcli",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1938717277
+    },
+    {
+      "type": "arrow",
+      "id": "edge_9",
+      "x": 620.0,
+      "y": 335.0,
+      "width": 0.0,
+      "height": 100.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "web",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "dispatch",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1403699931
+    },
+    {
+      "type": "arrow",
+      "id": "edge_10",
+      "x": 400.0,
+      "y": 435.0,
+      "width": 450.0,
+      "height": -45.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          450.0,
+          -45.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "graphcli",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 99453809
+    },
+    {
+      "type": "text",
+      "id": "edge_label_10",
+      "x": 555.0,
+      "y": 403.5,
+      "width": 140,
+      "height": 18,
+      "text": "client factory",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 215673534
+    },
+    {
+      "type": "arrow",
+      "id": "edge_11",
+      "x": 620.0,
+      "y": 435.0,
+      "width": 230.0,
+      "height": -45.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          230.0,
+          -45.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "dispatch",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 112603713
+    },
+    {
+      "type": "arrow",
+      "id": "edge_12",
+      "x": 400.0,
+      "y": 435.0,
+      "width": 740.0,
+      "height": -70.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          740.0,
+          -70.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "graphcli",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "msgraph",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1364967414
+    },
+    {
+      "type": "text",
+      "id": "edge_label_12",
+      "x": 682.5,
+      "y": 391.0,
+      "width": 175,
+      "height": 18,
+      "text": "REST + delegated fallback",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 2139228886
+    },
+    {
+      "type": "arrow",
+      "id": "edge_13",
+      "x": 1140.0,
+      "y": 365.0,
+      "width": 270.0,
+      "height": -50.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          270.0,
+          -50.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "msgraph",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "inbox",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 733685601
+    },
+    {
+      "type": "text",
+      "id": "edge_label_13",
+      "x": 1205.0,
+      "y": 331.0,
+      "width": 140,
+      "height": 18,
+      "text": "sendMail",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1014850212
+    },
+    {
+      "type": "arrow",
+      "id": "edge_14",
+      "x": 1410.0,
+      "y": 315.0,
+      "width": 0.0,
+      "height": 105.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0.0,
+          105.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "inbox",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "invitee",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 591918378
+    },
+    {
+      "type": "text",
+      "id": "edge_label_14",
+      "x": 1340.0,
+      "y": 358.5,
+      "width": 140,
+      "height": 18,
+      "text": "email arrives",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 796184312
+    },
+    {
+      "type": "arrow",
+      "id": "edge_15",
+      "x": 1410.0,
+      "y": 420.0,
+      "width": -530.0,
+      "height": 620.0,
+      "strokeColor": "#1864ab",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -530.0,
+          620.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "invitee",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "teams",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1370424681
+    },
+    {
+      "type": "text",
+      "id": "edge_label_15",
+      "x": 1029.5,
+      "y": 721.0,
+      "width": 231,
+      "height": 18,
+      "text": "clicks Join (Teams desktop / web)",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 839118410
+    },
+    {
+      "type": "arrow",
+      "id": "edge_16",
+      "x": 620.0,
+      "y": 435.0,
+      "width": -370.0,
+      "height": 260.0,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -370.0,
+          260.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "dispatch",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "app_gw",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1851224751
+    },
+    {
+      "type": "text",
+      "id": "edge_label_16",
+      "x": 337.0,
+      "y": 556.0,
+      "width": 196,
+      "height": 18,
+      "text": "POST /joinCall (Transport A)",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1206004718
+    },
+    {
+      "type": "arrow",
+      "id": "edge_17",
+      "x": 250.0,
+      "y": 695.0,
+      "width": 380.0,
+      "height": 0.0,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          380.0,
+          0.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "app_gw",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "ta_auth",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 15741334
+    },
+    {
+      "type": "text",
+      "id": "edge_label_17",
+      "x": 370.0,
+      "y": 686.0,
+      "width": 140,
+      "height": 18,
+      "text": "TLS terminate",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 573535187
+    },
+    {
+      "type": "arrow",
+      "id": "edge_18",
+      "x": 630.0,
+      "y": 695.0,
+      "width": -355.0,
+      "height": 170.0,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -355.0,
+          170.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "ta_auth",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "echo_bot",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 193447483
+    },
+    {
+      "type": "text",
+      "id": "edge_label_18",
+      "x": 382.5,
+      "y": 771.0,
+      "width": 140,
+      "height": 18,
+      "text": "X-Bot-Auth",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 372775446
+    },
+    {
+      "type": "arrow",
+      "id": "edge_19",
+      "x": 275.0,
+      "y": 865.0,
+      "width": 360.0,
+      "height": 0.0,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          360.0,
+          0.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "echo_bot",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "sidecar",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 707472053
+    },
+    {
+      "type": "text",
+      "id": "edge_label_19",
+      "x": 385.0,
+      "y": 856.0,
+      "width": 140,
+      "height": 18,
+      "text": "local media bridge",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 51157840
+    },
+    {
+      "type": "arrow",
+      "id": "edge_20",
+      "x": 635.0,
+      "y": 865.0,
+      "width": -115.0,
+      "height": 345.0,
+      "strokeColor": "#2f9e44",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -115.0,
+          345.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "sidecar",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "voicelive",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1721518274
+    },
+    {
+      "type": "text",
+      "id": "edge_label_20",
+      "x": 476.0,
+      "y": 1028.5,
+      "width": 203,
+      "height": 18,
+      "text": "Voice Live WS  (audio frames)",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 775209607
+    },
+    {
+      "type": "arrow",
+      "id": "edge_21",
+      "x": 275.0,
+      "y": 865.0,
+      "width": 605.0,
+      "height": 175.0,
+      "strokeColor": "#5c2d91",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          605.0,
+          175.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "echo_bot",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "teams",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 216961297
+    },
+    {
+      "type": "text",
+      "id": "edge_label_21",
+      "x": 507.5,
+      "y": 943.5,
+      "width": 140,
+      "height": 18,
+      "text": "joins as Teams bot",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 188103477
+    },
+    {
+      "type": "arrow",
+      "id": "edge_22",
+      "x": 620.0,
+      "y": 435.0,
+      "width": 850.0,
+      "height": 260.0,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          850.0,
+          260.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "dispatch",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "inv_json",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 2022371526
+    },
+    {
+      "type": "text",
+      "id": "edge_label_22",
+      "x": 975.0,
+      "y": 556.0,
+      "width": 140,
+      "height": 18,
+      "text": "writes (Transport B)",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1837968250
+    },
+    {
+      "type": "arrow",
+      "id": "edge_23",
+      "x": 1470.0,
+      "y": 695.0,
+      "width": -380.0,
+      "height": 0.0,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -380.0,
+          0.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "inv_json",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "browser_app",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1384386808
+    },
+    {
+      "type": "text",
+      "id": "edge_label_23",
+      "x": 1210.0,
+      "y": 686.0,
+      "width": 140,
+      "height": 18,
+      "text": "served on /data/\u2026",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 783156332
+    },
+    {
+      "type": "arrow",
+      "id": "edge_24",
+      "x": 1090.0,
+      "y": 695.0,
+      "width": 200.0,
+      "height": 155.0,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          200.0,
+          155.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "browser_app",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "op_browser_outer",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1363537886
+    },
+    {
+      "type": "text",
+      "id": "edge_label_24",
+      "x": 1120.0,
+      "y": 763.5,
+      "width": 140,
+      "height": 18,
+      "text": "serves /static/",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1363154773
+    },
+    {
+      "type": "arrow",
+      "id": "edge_25",
+      "x": 1115.0,
+      "y": 865.0,
+      "width": 65.0,
+      "height": 345.0,
+      "strokeColor": "#0c8599",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          65.0,
+          345.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "acs_sdk",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "acs_svc",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 340187709
+    },
+    {
+      "type": "text",
+      "id": "edge_label_25",
+      "x": 1056.5,
+      "y": 1028.5,
+      "width": 182,
+      "height": 18,
+      "text": "ACS join (Web Calling SDK)",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1398082910
+    },
+    {
+      "type": "arrow",
+      "id": "edge_26",
+      "x": 1180.0,
+      "y": 1210.0,
+      "width": -300.0,
+      "height": -170.0,
+      "strokeColor": "#5c2d91",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -300.0,
+          -170.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "acs_svc",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "teams",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 2098793551
+    },
+    {
+      "type": "text",
+      "id": "edge_label_26",
+      "x": 960.0,
+      "y": 1116.0,
+      "width": 140,
+      "height": 18,
+      "text": "joins as ACS guest",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 939001901
+    },
+    {
+      "type": "arrow",
+      "id": "edge_27",
+      "x": 1115.0,
+      "y": 865.0,
+      "width": -595.0,
+      "height": 345.0,
+      "strokeColor": "#2f9e44",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -595.0,
+          345.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "acs_sdk",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "voicelive",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1621186442
+    },
+    {
+      "type": "text",
+      "id": "edge_label_27",
+      "x": 716.0,
+      "y": 1028.5,
+      "width": 203,
+      "height": 18,
+      "text": "Voice Live WS  (avatar audio)",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1640287468
+    },
+    {
+      "type": "arrow",
+      "id": "edge_28",
+      "x": 520.0,
+      "y": 1210.0,
+      "width": 370.0,
+      "height": 140.0,
+      "strokeColor": "#2f9e44",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          370.0,
+          140.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "voicelive",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "ha_outer",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 1808916204
+    },
+    {
+      "type": "text",
+      "id": "edge_label_28",
+      "x": 610.5,
+      "y": 1271.0,
+      "width": 189,
+      "height": 18,
+      "text": "agent inference (Responses)",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 657037982
+    },
+    {
+      "type": "arrow",
+      "id": "edge_29",
+      "x": 890.0,
+      "y": 1350.0,
+      "width": -480.0,
+      "height": 20.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -480.0,
+          20.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "ha_outer",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "main_py",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 2023116877
+    },
+    {
+      "type": "text",
+      "id": "edge_label_29",
+      "x": 580.0,
+      "y": 1351.0,
+      "width": 140,
+      "height": 18,
+      "text": "loads",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 615777775
+    },
+    {
+      "type": "arrow",
+      "id": "edge_30",
+      "x": 410.0,
+      "y": 1370.0,
+      "width": 320.0,
+      "height": 0.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          320.0,
+          0.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "main_py",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "personas",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 142848163
+    },
+    {
+      "type": "text",
+      "id": "edge_label_30",
+      "x": 496.5,
+      "y": 1361.0,
+      "width": 147,
+      "height": 18,
+      "text": "instructions.py reads",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1118777503
+    },
+    {
+      "type": "arrow",
+      "id": "edge_31",
+      "x": 410.0,
+      "y": 1370.0,
+      "width": 640.0,
+      "height": 0.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          640.0,
+          0.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "main_py",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "tools",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 697380151
+    },
+    {
+      "type": "text",
+      "id": "edge_label_31",
+      "x": 660.0,
+      "y": 1361.0,
+      "width": 140,
+      "height": 18,
+      "text": "register_*",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 545512807
+    },
+    {
+      "type": "arrow",
+      "id": "edge_32",
+      "x": 890.0,
+      "y": 1350.0,
+      "width": 480.0,
+      "height": 20.0,
+      "strokeColor": "#212529",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          480.0,
+          20.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "ha_outer",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "vcfg",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 858414639
+    },
+    {
+      "type": "text",
+      "id": "edge_label_32",
+      "x": 1042.5,
+      "y": 1351.0,
+      "width": 175,
+      "height": 18,
+      "text": "attached to agent version",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1404779826
+    },
+    {
+      "type": "arrow",
+      "id": "edge_33",
+      "x": 450.0,
+      "y": 850.0,
+      "width": -255.0,
+      "height": 670.0,
+      "strokeColor": "#1971c2",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -255.0,
+          670.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "vmss_outer",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "kv",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 698159833
+    },
+    {
+      "type": "text",
+      "id": "edge_label_33",
+      "x": 252.5,
+      "y": 1176.0,
+      "width": 140,
+      "height": 18,
+      "text": "reads at boot (MI)",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1134326029
+    },
+    {
+      "type": "arrow",
+      "id": "edge_34",
+      "x": 450.0,
+      "y": 850.0,
+      "width": 305.0,
+      "height": 670.0,
+      "strokeColor": "#1971c2",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          305.0,
+          670.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "vmss_outer",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "stor",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 696521420
+    },
+    {
+      "type": "text",
+      "id": "edge_label_34",
+      "x": 532.5,
+      "y": 1176.0,
+      "width": 140,
+      "height": 18,
+      "text": "pulls artifact zip",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1270468231
+    },
+    {
+      "type": "arrow",
+      "id": "edge_35",
+      "x": 450.0,
+      "y": 850.0,
+      "width": 25.0,
+      "height": 670.0,
+      "strokeColor": "#1971c2",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          25.0,
+          670.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "vmss_outer",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "acr2",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 148020525
+    },
+    {
+      "type": "text",
+      "id": "edge_label_35",
+      "x": 392.5,
+      "y": 1176.0,
+      "width": 140,
+      "height": 18,
+      "text": "pulls bot image",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 1038948892
+    },
+    {
+      "type": "arrow",
+      "id": "edge_36",
+      "x": 450.0,
+      "y": 850.0,
+      "width": 1100.0,
+      "height": 670.0,
+      "strokeColor": "#1971c2",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roundness": null,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          1100.0,
+          670.0
+        ]
+      ],
+      "startBinding": {
+        "elementId": "vmss_outer",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "logs",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "seed": 809766248
+    },
+    {
+      "type": "text",
+      "id": "edge_label_36",
+      "x": 930.0,
+      "y": 1176.0,
+      "width": 140,
+      "height": 18,
+      "text": "streams logs",
+      "fontSize": 11,
+      "fontFamily": 2,
+      "strokeColor": "#000000",
+      "backgroundColor": "#ffffff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "seed": 364632537
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff",
+    "gridSize": 20
+  },
+  "files": {}
+}
