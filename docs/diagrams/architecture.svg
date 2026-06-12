@@ -1,0 +1,243 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-64 -4 1868 1628" width="1868" height="1628" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="context-stroke"/></marker></defs>
+<rect x="-64" y="-4" width="1868" height="1628" fill="#ffffff"/>
+<path d="M 80.0,170.0 L -40.0,170.0 L -40.0,1560.0 L 60.0,1560.0" fill="none" stroke="#495057" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="-89.0" y="1552.0" width="98.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="-40.0" y="1564.0" font-size="10" text-anchor="middle" fill="#495057">what-if + apply</text>
+<path d="M 580.0,190.0 L 580.0,220.0 L 1780.0,220.0 L 1780.0,1300.0 L 1540.0,1313.5" fill="none" stroke="#FF00FF" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="1722.0" y="212.0" width="116.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1780.0" y="224.0" font-size="10" text-anchor="middle" fill="#FF00FF">build + push image</text>
+<path d="M 556.0,190.0 L 520.0,220.0 L 20.0,220.0 L 20.0,790.0 L 80.0,798.4" fill="none" stroke="#FF66FF" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="-50.0" y="212.0" width="140.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="20.0" y="224.0" font-size="10" text-anchor="middle" fill="#FF66FF">publishes artifact zip</text>
+<path d="M 1540.0,190.0 L 1540.0,260.0 L 1730.0,260.0 L 1730.0,1350.0 L 1540.0,1350.0" fill="none" stroke="#495057" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="1693.0" y="252.0" width="74.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1730.0" y="264.0" font-size="10" text-anchor="middle" fill="#495057">pulls image</text>
+<path d="M 160.0,365.6 L 170.0,370.0 L 170.0,335.0 L 300.0,332.2" fill="none" stroke="#212529" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="142.0" y="327.0" width="56.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="170.0" y="339.0" font-size="10" text-anchor="middle" fill="#212529">schedule</text>
+<path d="M 400.0,360.0 L 400.0,430.0" fill="none" stroke="#212529" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 500.0,334.5 L 510.0,335.0 L 510.0,420.0 L 560.0,420.0 L 582.2,430.0" fill="none" stroke="#212529" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 621.4,360.0 L 570.0,400.0 L 420.0,400.0 L 410.8,430.0" fill="none" stroke="#212529" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 660.0,360.0 L 660.0,430.0" fill="none" stroke="#212529" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 409.3,500.0 L 420.0,540.0 L 890.0,540.0 L 890.0,500.0" fill="none" stroke="#212529" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="844.0" y="532.0" width="92.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="890.0" y="544.0" font-size="10" text-anchor="middle" fill="#212529">client factory</text>
+<path d="M 760.0,436.7 L 820.0,419.8" fill="none" stroke="#212529" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 438.2,500.0 L 460.0,520.0 L 1000.0,520.0 L 1000.0,390.0 L 1040.0,390.0" fill="none" stroke="#FF3399" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="921.0" y="512.0" width="158.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1000.0" y="524.0" font-size="10" text-anchor="middle" fill="#FF3399">REST + delegated fallback</text>
+<path d="M 1220.0,365.9 L 1310.0,341.8" fill="none" stroke="#212529" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1237.0" y="345.8" width="56.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1265.0" y="357.8" font-size="10" text-anchor="middle" fill="#212529">sendMail</text>
+<path d="M 1410.0,350.0 L 1410.0,380.0" fill="none" stroke="#212529" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1367.0" y="357.0" width="86.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1410.0" y="369.0" font-size="10" text-anchor="middle" fill="#212529">email arrives</text>
+<path d="M 1510.0,420.0 L 1700.0,420.0 L 1700.0,1050.0 L 1340.0,1054.4" fill="none" stroke="#1864ab" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1597.0" y="1042.0" width="206.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1700.0" y="1054.0" font-size="10" text-anchor="middle" fill="#1864ab">clicks Join (Teams desktop / web)</text>
+<path d="M 641.7,500.0 L 600.0,580.0 L 380.0,580.0 L 380.0,640.0 L 230.0,640.0 L 230.0,660.0" fill="none" stroke="#0c8599" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="292.0" y="632.0" width="176.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="380.0" y="644.0" font-size="10" text-anchor="middle" fill="#0c8599">POST /joinCall (Transport A)</text>
+<path d="M 380.0,695.0 L 500.0,695.0" fill="none" stroke="#0c8599" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="397.0" y="687.0" width="86.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="440.0" y="699.0" font-size="10" text-anchor="middle" fill="#0c8599">TLS terminate</text>
+<path d="M 650.9,730.0 L 630.0,810.0 L 275.0,810.0 L 264.2,830.0" fill="none" stroke="#0c8599" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="241.0" y="802.0" width="68.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="275.0" y="814.0" font-size="10" text-anchor="middle" fill="#0c8599">X-Bot-Auth</text>
+<path d="M 380.0,875.0 L 500.0,875.0" fill="none" stroke="#0c8599" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="382.0" y="867.0" width="116.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="440.0" y="879.0" font-size="10" text-anchor="middle" fill="#0c8599">local media bridge</text>
+<path d="M 655.0,920.0 L 655.0,990.0 L 390.0,990.0 L 501.4,1170.0" fill="none" stroke="#007FFF" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="299.0" y="982.0" width="182.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="390.0" y="994.0" font-size="10" text-anchor="middle" fill="#007FFF">Voice Live WS  (audio frames)</text>
+<path d="M 230.3,920.0 L 200.0,1060.0 L 420.0,1060.0" fill="none" stroke="#5c2d91" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="142.0" y="1052.0" width="116.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="200.0" y="1064.0" font-size="10" text-anchor="middle" fill="#5c2d91">joins as Teams bot</text>
+<path d="M 678.3,500.0 L 720.0,580.0 L 1470.0,580.0 L 1477.0,660.0" fill="none" stroke="#0c8599" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1406.0" y="572.0" width="128.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1470.0" y="584.0" font-size="10" text-anchor="middle" fill="#0c8599">writes (Transport B)</text>
+<path d="M 1340.0,695.0 L 1190.0,695.0" fill="none" stroke="#0c8599" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1210.0" y="687.0" width="110.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1265.0" y="699.0" font-size="10" text-anchor="middle" fill="#0c8599">served on /data/…</text>
+<path d="M 1100.6,730.0 L 1165.8,780.0" fill="none" stroke="#0c8599" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1084.2" y="747.0" width="98.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1133.2" y="759.0" font-size="10" text-anchor="middle" fill="#0c8599">serves /static/</text>
+<path d="M 1118.4,920.0 L 1160.0,1000.0 L 1370.0,1000.0 L 1208.5,1170.0" fill="none" stroke="#0c8599" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1288.0" y="992.0" width="164.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1370.0" y="1004.0" font-size="10" text-anchor="middle" fill="#0c8599">ACS join (Web Calling SDK)</text>
+<path d="M 1180.0,1170.0 L 1180.0,1110.0 L 880.0,1110.0 L 880.0,1090.0" fill="none" stroke="#5c2d91" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="822.0" y="1102.0" width="116.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="880.0" y="1114.0" font-size="10" text-anchor="middle" fill="#5c2d91">joins as ACS guest</text>
+<path d="M 1101.7,920.0 L 1115.0,1010.0 L 370.0,1010.0 L 496.3,1170.0" fill="none" stroke="#2f9e44" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="279.0" y="1002.0" width="182.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="370.0" y="1014.0" font-size="10" text-anchor="middle" fill="#2f9e44">Voice Live WS  (avatar audio)</text>
+<path d="M 594.0,1230.0 L 692.7,1270.0" fill="none" stroke="#2f9e44" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="558.3" y="1242.0" width="170.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="643.3" y="1254.0" font-size="10" text-anchor="middle" fill="#2f9e44">agent inference (Responses)</text>
+<path d="M 850.0,1430.0 L 840.0,1450.0 L 410.0,1450.0 L 397.4,1390.0" fill="none" stroke="#212529" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="391.0" y="1442.0" width="38.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="410.0" y="1454.0" font-size="10" text-anchor="middle" fill="#212529">loads</text>
+<path d="M 520.0,1355.0 L 660.0,1355.0" fill="none" stroke="#212529" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="523.0" y="1347.0" width="134.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="590.0" y="1359.0" font-size="10" text-anchor="middle" fill="#212529">instructions.py reads</text>
+<path d="M 428.2,1390.0 L 450.0,1410.0 L 1050.0,1410.0 L 1050.0,1390.0" fill="none" stroke="#212529" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="1016.0" y="1402.0" width="68.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1050.0" y="1414.0" font-size="10" text-anchor="middle" fill="#212529">register_*</text>
+<path d="M 922.0,1430.0 L 930.0,1450.0 L 1370.0,1450.0 L 1370.0,1390.0" fill="none" stroke="#212529" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="1291.0" y="1442.0" width="158.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1370.0" y="1454.0" font-size="10" text-anchor="middle" fill="#212529">attached to agent version</text>
+<path d="M 80.0,850.0 L 0.0,850.0 L 0.0,1550.0 L 60.0,1553.1" fill="none" stroke="#1971c2" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="-43.0" y="1542.0" width="86.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="0.0" y="1554.0" font-size="10" text-anchor="middle" fill="#1971c2">reads at boot</text>
+<path d="M 410.8,940.0 L 180.0,1470.0 L 755.0,1470.0 L 755.0,1540.0" fill="none" stroke="#1971c2" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="697.0" y="1462.0" width="116.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="755.0" y="1474.0" font-size="10" text-anchor="middle" fill="#1971c2">pulls artifact zip</text>
+<path d="M 161.2,940.0 L 158.0,941.0 L 160.0,941.0 L 160.0,1490.0 L 475.0,1490.0 L 475.0,1540.0" fill="none" stroke="#1971c2" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="111.0" y="1482.0" width="98.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="160.0" y="1494.0" font-size="10" text-anchor="middle" fill="#1971c2">pulls bot image</text>
+<path d="M 450.0,940.0 L 450.0,970.0 L 1610.0,970.0 L 1552.0,1540.0" fill="none" stroke="#1971c2" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="1570.0" y="962.0" width="80.0" height="16" fill="#ffffff" fill-opacity="0.85" rx="2"/>
+<text x="1610.0" y="974.0" font-size="10" text-anchor="middle" fill="#1971c2">streams logs</text>
+<text x="870.0" y="48.0" font-size="22" text-anchor="middle" fill="#222222" font-weight="bold">teams_avatar_voice_live — End-to-End Architecture (v0.1.3)</text>
+<text x="870.0" y="84.0" font-size="13" text-anchor="middle" fill="#222222">AI agent joins a Microsoft Teams meeting as a video avatar driven by Azure Voice Live</text>
+<rect x="40" y="120" width="1660" height="90" rx="4" ry="4" fill="none" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="48.0" y="140.0" font-size="14" text-anchor="start" fill="#222222" font-weight="bold">Build &amp; Deploy  ·  GitHub Actions (OIDC → Azure)</text>
+<rect x="80" y="150" width="320" height="40" rx="3" ry="3" fill="#dee2e6" stroke="#495057" stroke-width="1.5"/>
+<text x="240.0" y="167.0" font-size="12" text-anchor="middle" fill="#000000">.github/workflows/infra-deploy.yml</text>
+<text x="240.0" y="182.0" font-size="11" text-anchor="middle" fill="#000000">Bicep what-if + apply</text>
+<rect x="420" y="150" width="320" height="40" rx="3" ry="3" fill="#dee2e6" stroke="#495057" stroke-width="1.5"/>
+<text x="580.0" y="167.0" font-size="12" text-anchor="middle" fill="#000000">.github/workflows/agent-deploy.yml</text>
+<text x="580.0" y="182.0" font-size="11" text-anchor="middle" fill="#000000">builds hosted-agent + VMSS artifact zip</text>
+<rect x="760" y="150" width="320" height="40" rx="3" ry="3" fill="#dee2e6" stroke="#495057" stroke-width="1.5"/>
+<text x="920.0" y="167.0" font-size="12" text-anchor="middle" fill="#000000">.github/workflows/secret-rotation.yml</text>
+<text x="920.0" y="182.0" font-size="11" text-anchor="middle" fill="#000000">rotates KV secrets on cron</text>
+<rect x="1100" y="150" width="280" height="40" rx="3" ry="3" fill="#dee2e6" stroke="#495057" stroke-width="1.5"/>
+<text x="1240.0" y="167.0" font-size="12" text-anchor="middle" fill="#000000">scripts/bootstrap-oidc.ps1</text>
+<text x="1240.0" y="182.0" font-size="11" text-anchor="middle" fill="#000000">federated UAMI per (env, repo)</text>
+<rect x="1400" y="150" width="280" height="40" rx="3" ry="3" fill="#cfe4fa" stroke="#0078d4" stroke-width="1.5"/>
+<text x="1540.0" y="167.0" font-size="12" text-anchor="middle" fill="#000000">Azure Container Registry</text>
+<text x="1540.0" y="182.0" font-size="11" text-anchor="middle" fill="#000000">hosted-agent image + bot image</text>
+<rect x="90" y="270" width="70" height="160" rx="6" ry="6" fill="#ffe8cc" stroke="#e67700" stroke-width="1.5"/>
+<text x="125.0" y="347.0" font-size="12" text-anchor="middle" fill="#000000">Operator</text>
+<text x="125.0" y="362.0" font-size="11" text-anchor="middle" fill="#000000">(human)</text>
+<rect x="260" y="260" width="720" height="300" rx="12" ry="12" fill="#FFFFCC" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="268.0" y="280.0" font-size="14" text-anchor="start" fill="#222222" font-weight="bold">launcher/  (Python CLI, optional FastAPI wrapper)</text>
+<rect x="300" y="300" width="200" height="60" rx="5" ry="5" fill="#a5d8ff" stroke="#1864ab" stroke-width="1.5"/>
+<text x="400.0" y="327.0" font-size="12" text-anchor="middle" fill="#000000">cli.py</text>
+<text x="400.0" y="342.0" font-size="11" text-anchor="middle" fill="#000000">python -m launcher</text>
+<rect x="560" y="300" width="200" height="60" rx="5" ry="5" fill="#a5d8ff" stroke="#1864ab" stroke-width="1.5"/>
+<text x="660.0" y="327.0" font-size="12" text-anchor="middle" fill="#000000">web.py</text>
+<text x="660.0" y="342.0" font-size="11" text-anchor="middle" fill="#000000">uvicorn launcher.web:app</text>
+<rect x="300" y="430" width="200" height="70" rx="6" ry="6" fill="#a5d8ff" stroke="#1864ab" stroke-width="1.5"/>
+<text x="400.0" y="462.0" font-size="12" text-anchor="middle" fill="#000000">graph_client.py</text>
+<text x="400.0" y="477.0" font-size="11" text-anchor="middle" fill="#000000">creates Teams meeting + sends invite</text>
+<rect x="560" y="430" width="200" height="70" rx="6" ry="6" fill="#a5d8ff" stroke="#1864ab" stroke-width="1.5"/>
+<text x="660.0" y="454.5" font-size="12" text-anchor="middle" fill="#000000">bot_dispatcher.py</text>
+<text x="660.0" y="469.5" font-size="11" text-anchor="middle" fill="#000000">routes to graph_bot or</text>
+<text x="660.0" y="484.5" font-size="11" text-anchor="middle" fill="#000000">   browser_webrtc</text>
+<rect x="820" y="300" width="140" height="200" rx="11" ry="11" fill="#a5d8ff" stroke="#1864ab" stroke-width="1.5"/>
+<text x="890.0" y="389.5" font-size="12" text-anchor="middle" fill="#000000">core/</text>
+<text x="890.0" y="404.5" font-size="11" text-anchor="middle" fill="#000000">Foundry + Azure OpenAI</text>
+<text x="890.0" y="419.5" font-size="11" text-anchor="middle" fill="#000000">  client factories + config</text>
+<rect x="1040" y="320" width="180" height="140" rx="11" ry="11" fill="#f3d9fa" stroke="#862e9c" stroke-width="1.5"/>
+<text x="1130.0" y="372.0" font-size="12" text-anchor="middle" fill="#000000">Microsoft Graph API</text>
+<text x="1130.0" y="387.0" font-size="11" text-anchor="middle" fill="#000000">/users/{org}/onlineMeetings</text>
+<text x="1130.0" y="402.0" font-size="11" text-anchor="middle" fill="#000000">/users/{org}/sendMail</text>
+<text x="1130.0" y="417.0" font-size="11" text-anchor="middle" fill="#000000">communications.calls</text>
+<rect x="1310" y="280" width="200" height="70" rx="6" ry="6" fill="#cfe4fa" stroke="#0078d4" stroke-width="1.5"/>
+<text x="1410.0" y="312.0" font-size="12" text-anchor="middle" fill="#000000">Invitee inbox</text>
+<text x="1410.0" y="327.0" font-size="11" text-anchor="middle" fill="#000000">(Outlook / Gmail / …)</text>
+<rect x="1310" y="380" width="200" height="80" rx="6" ry="6" fill="#ffe8cc" stroke="#e67700" stroke-width="1.5"/>
+<text x="1410.0" y="409.5" font-size="12" text-anchor="middle" fill="#000000">Invitee</text>
+<text x="1410.0" y="424.5" font-size="11" text-anchor="middle" fill="#000000">(human, clicks the</text>
+<text x="1410.0" y="439.5" font-size="11" text-anchor="middle" fill="#000000">Teams Join link)</text>
+<rect x="40" y="600" width="820" height="360" rx="14" ry="14" fill="#EDEDED" stroke="#1971c2" stroke-width="1.5"/>
+<text x="48.0" y="620.0" font-size="14" text-anchor="start" fill="#1971c2" font-weight="bold">Transport A — graph_bot  (production / VMSS)</text>
+<rect x="80" y="660" width="300" height="70" rx="6" ry="6" fill="#cfe4fa" stroke="#0078d4" stroke-width="1.5"/>
+<text x="230.0" y="692.0" font-size="12" text-anchor="middle" fill="#000000">App Gateway (WAF) + TLS</text>
+<text x="230.0" y="707.0" font-size="11" text-anchor="middle" fill="#000000">public HTTPS entry point</text>
+<rect x="500" y="660" width="320" height="70" rx="6" ry="6" fill="#99e9f2" stroke="#0c8599" stroke-width="1.5"/>
+<text x="660.0" y="692.0" font-size="12" text-anchor="middle" fill="#000000">POST /joinCall  (authenticated)</text>
+<text x="660.0" y="707.0" font-size="11" text-anchor="middle" fill="#000000">join URL · display name · session id</text>
+<rect x="80" y="760" width="740" height="180" rx="7" ry="7" fill="#FFCCE6" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="88.0" y="780.0" font-size="14" text-anchor="start" fill="#222222" font-weight="bold">VMSS  (Windows Server 2022, NSSM-managed services)</text>
+<rect x="100" y="830" width="280" height="90" rx="7" ry="7" fill="#99e9f2" stroke="#0c8599" stroke-width="1.5"/>
+<text x="240.0" y="864.5" font-size="12" text-anchor="middle" fill="#000000">C# Echo Bot  (bot/ submodule)</text>
+<text x="240.0" y="879.5" font-size="11" text-anchor="middle" fill="#000000">places Graph call →</text>
+<text x="240.0" y="894.5" font-size="11" text-anchor="middle" fill="#000000">joins as 1st-class Teams participant</text>
+<rect x="500" y="830" width="310" height="90" rx="7" ry="7" fill="#99e9f2" stroke="#0c8599" stroke-width="1.5"/>
+<text x="655.0" y="864.5" font-size="12" text-anchor="middle" fill="#000000">Python avatar-sidecar  (bot/avatar-sidecar/)</text>
+<text x="655.0" y="879.5" font-size="11" text-anchor="middle" fill="#000000">bridges Voice Live audio frames</text>
+<text x="655.0" y="894.5" font-size="11" text-anchor="middle" fill="#000000">↔ Graph Media SDK</text>
+<rect x="880" y="600" width="780" height="360" rx="14" ry="14" fill="#E6FFCC" stroke="#2f9e44" stroke-width="1.5"/>
+<text x="888.0" y="620.0" font-size="14" text-anchor="start" fill="#2f9e44" font-weight="bold">Transport B — browser_webrtc  (local dev / 30-sec demo)</text>
+<rect x="920" y="660" width="270" height="70" rx="6" ry="6" fill="#99e9f2" stroke="#0c8599" stroke-width="1.5"/>
+<text x="1055.0" y="684.5" font-size="12" text-anchor="middle" fill="#000000">browser-fallback/app.py</text>
+<text x="1055.0" y="699.5" font-size="11" text-anchor="middle" fill="#000000">FastAPI</text>
+<text x="1055.0" y="714.5" font-size="11" text-anchor="middle" fill="#000000">static/ operator UI</text>
+<rect x="1340" y="660" width="280" height="70" rx="6" ry="6" fill="#99e9f2" stroke="#0c8599" stroke-width="1.5"/>
+<text x="1480.0" y="692.0" font-size="12" text-anchor="middle" fill="#000000">browser-fallback/data/latest-invite.json</text>
+<text x="1480.0" y="707.0" font-size="11" text-anchor="middle" fill="#000000">(written by launcher · polled by static page)</text>
+<rect x="920" y="780" width="700" height="160" rx="6" ry="6" fill="#FFCCE6" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="928.0" y="800.0" font-size="14" text-anchor="start" fill="#222222" font-weight="bold">Operator browser tab</text>
+<rect x="940" y="830" width="310" height="90" rx="7" ry="7" fill="#99e9f2" stroke="#0c8599" stroke-width="1.5"/>
+<text x="1095.0" y="864.5" font-size="12" text-anchor="middle" fill="#000000">ACS Web Calling SDK  (rebuild-acs/)</text>
+<text x="1095.0" y="879.5" font-size="11" text-anchor="middle" fill="#000000">joins meeting as ACS guest</text>
+<text x="1095.0" y="894.5" font-size="11" text-anchor="middle" fill="#000000">(WebRTC media)</text>
+<rect x="1270" y="830" width="310" height="90" rx="7" ry="7" fill="#99e9f2" stroke="#0c8599" stroke-width="1.5"/>
+<text x="1425.0" y="872.0" font-size="12" text-anchor="middle" fill="#000000">Chroma-key canvas overlay</text>
+<text x="1425.0" y="887.0" font-size="11" text-anchor="middle" fill="#000000">local background composite</text>
+<rect x="420" y="1030" width="920" height="60" rx="5" ry="5" fill="#e8daee" stroke="#5c2d91" stroke-width="1.5"/>
+<text x="880.0" y="1057.0" font-size="12" text-anchor="middle" fill="#000000">Microsoft Teams meeting</text>
+<text x="880.0" y="1072.0" font-size="11" text-anchor="middle" fill="#000000">Invitee  ↔  Avatar (Lisa)  —  bidirectional audio + video</text>
+<rect x="200" y="1130" width="1360" height="310" rx="12" ry="12" fill="#99CCFF" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="208.0" y="1150.0" font-size="14" text-anchor="start" fill="#222222" font-weight="bold">Foundry project</text>
+<rect x="240" y="1170" width="560" height="60" rx="5" ry="5" fill="#b2f2bb" stroke="#2f9e44" stroke-width="1.5"/>
+<text x="520.0" y="1189.5" font-size="12" text-anchor="middle" fill="#000000">Azure Voice Live</text>
+<text x="520.0" y="1204.5" font-size="11" text-anchor="middle" fill="#000000">real-time speech-to-speech</text>
+<text x="520.0" y="1219.5" font-size="11" text-anchor="middle" fill="#000000">on top of Foundry</text>
+<rect x="820" y="1170" width="720" height="60" rx="5" ry="5" fill="#cfe4fa" stroke="#0078d4" stroke-width="1.5"/>
+<text x="1180.0" y="1197.0" font-size="12" text-anchor="middle" fill="#000000">Azure Communication Services (ACS)</text>
+<text x="1180.0" y="1212.0" font-size="11" text-anchor="middle" fill="#000000">Teams meeting bridge for Transport B (browser path)</text>
+<rect x="240" y="1270" width="1300" height="160" rx="6" ry="6" fill="#E5CCFF" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="248.0" y="1290.0" font-size="14" text-anchor="start" fill="#222222" font-weight="bold">hosted-agent container  (Foundry-hosted)</text>
+<rect x="260" y="1320" width="260" height="70" rx="6" ry="6" fill="#b2f2bb" stroke="#2f9e44" stroke-width="1.5"/>
+<text x="390.0" y="1344.5" font-size="12" text-anchor="middle" fill="#000000">main.py</text>
+<text x="390.0" y="1359.5" font-size="11" text-anchor="middle" fill="#000000">Agent factory</text>
+<text x="390.0" y="1374.5" font-size="11" text-anchor="middle" fill="#000000">registers example tools</text>
+<rect x="660" y="1320" width="220" height="70" rx="6" ry="6" fill="#b2f2bb" stroke="#2f9e44" stroke-width="1.5"/>
+<text x="770.0" y="1344.5" font-size="12" text-anchor="middle" fill="#000000">personas/</text>
+<text x="770.0" y="1359.5" font-size="11" text-anchor="middle" fill="#000000">lisa.md (worked example)</text>
+<text x="770.0" y="1374.5" font-size="11" text-anchor="middle" fill="#000000">generic.md (starter)</text>
+<rect x="900" y="1320" width="300" height="70" rx="6" ry="6" fill="#b2f2bb" stroke="#2f9e44" stroke-width="1.5"/>
+<text x="1050.0" y="1337.0" font-size="12" text-anchor="middle" fill="#000000">tools/</text>
+<text x="1050.0" y="1352.0" font-size="11" text-anchor="middle" fill="#000000">job_requirements.py</text>
+<text x="1050.0" y="1367.0" font-size="11" text-anchor="middle" fill="#000000">(example knowledge tool —</text>
+<text x="1050.0" y="1382.0" font-size="11" text-anchor="middle" fill="#000000">swap for your domain)</text>
+<rect x="1220" y="1320" width="300" height="70" rx="6" ry="6" fill="#b2f2bb" stroke="#2f9e44" stroke-width="1.5"/>
+<text x="1370.0" y="1344.5" font-size="12" text-anchor="middle" fill="#000000">voice-live-config.json</text>
+<text x="1370.0" y="1359.5" font-size="11" text-anchor="middle" fill="#000000">voice / VAD / avatar</text>
+<text x="1370.0" y="1374.5" font-size="11" text-anchor="middle" fill="#000000">attached as agent metadata</text>
+<rect x="40" y="1500" width="1680" height="100" rx="4" ry="4" fill="none" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="48.0" y="1520.0" font-size="14" text-anchor="start" fill="#222222" font-weight="bold">Supporting Azure resources  (infra/  — Bicep)</text>
+<rect x="60" y="1540" width="270" height="40" rx="3" ry="3" fill="#dbe4ff" stroke="#1971c2" stroke-width="1.5"/>
+<text x="195.0" y="1557.0" font-size="12" text-anchor="middle" fill="#000000">Key Vault  (private endpoint)</text>
+<text x="195.0" y="1572.0" font-size="11" text-anchor="middle" fill="#000000">bot client secret + TLS cert</text>
+<rect x="340" y="1540" width="270" height="40" rx="3" ry="3" fill="#dbe4ff" stroke="#1971c2" stroke-width="1.5"/>
+<text x="475.0" y="1557.0" font-size="12" text-anchor="middle" fill="#000000">ACR  (image registry)</text>
+<text x="475.0" y="1572.0" font-size="11" text-anchor="middle" fill="#000000">hosted-agent + bot images</text>
+<rect x="620" y="1540" width="270" height="40" rx="3" ry="3" fill="#dbe4ff" stroke="#1971c2" stroke-width="1.5"/>
+<text x="755.0" y="1557.0" font-size="12" text-anchor="middle" fill="#000000">Storage Account</text>
+<text x="755.0" y="1572.0" font-size="11" text-anchor="middle" fill="#000000">agent-artifacts/.zip</text>
+<rect x="900" y="1540" width="240" height="40" rx="3" ry="3" fill="#dbe4ff" stroke="#1971c2" stroke-width="1.5"/>
+<text x="1020.0" y="1557.0" font-size="12" text-anchor="middle" fill="#000000">VNet + subnets</text>
+<text x="1020.0" y="1572.0" font-size="11" text-anchor="middle" fill="#000000">NSGs · service endpoints</text>
+<rect x="1150" y="1540" width="240" height="40" rx="3" ry="3" fill="#dbe4ff" stroke="#1971c2" stroke-width="1.5"/>
+<text x="1270.0" y="1557.0" font-size="12" text-anchor="middle" fill="#000000">Bastion  (break-glass)</text>
+<text x="1270.0" y="1572.0" font-size="11" text-anchor="middle" fill="#000000">off by default</text>
+<rect x="1400" y="1540" width="300" height="40" rx="3" ry="3" fill="#dbe4ff" stroke="#1971c2" stroke-width="1.5"/>
+<text x="1550.0" y="1557.0" font-size="12" text-anchor="middle" fill="#000000">Log Analytics + Alerts</text>
+<text x="1550.0" y="1572.0" font-size="11" text-anchor="middle" fill="#000000">VMSS · App Gw · sidecar logs</text>
+<rect x="98" y="285" width="54" height="60" rx="0" ry="0" fill="none" stroke="#333333" stroke-width="1.5"/>
+</svg>

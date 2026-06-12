@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lisa Teams WebRTC Demo</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%23cc0033%22%2F%3E%3Ctext%20x%3D%2232%22%20y%3D%2244%22%20font-size%3D%2236%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-weight%3D%22700%22%20fill%3D%22white%22%20text-anchor%3D%22middle%22%3EL%3C%2Ftext%3E%3C%2Fsvg%3E" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="stage">
+      <header class="topbar">
+        <div>
+          <div class="brand">Avatar Demo</div>
+          <h1>Lisa</h1>
+        </div>
+        <div class="status-strip">
+          <span id="voice-status" class="pill">Voice: idle</span>
+          <span id="teams-status" class="pill">Teams: idle</span>
+          <span id="auto-status" class="pill">Auto: off</span>
+        </div>
+      </header>
+
+      <div class="media-layout">
+        <div class="avatar-pane">
+          <video id="avatar-video" autoplay playsinline></video>
+          <div id="avatar-placeholder" class="avatar-placeholder">Lisa</div>
+        </div>
+        <aside class="transcript" id="transcript"></aside>
+      </div>
+    </section>
+
+    <section class="controls">
+      <div class="control-row">
+        <label>
+          Teams meeting link
+          <input id="teams-link" type="url" placeholder="https://teams.microsoft.com/l/meetup-join/..." />
+        </label>
+      </div>
+      <label class="toggle-row">
+        <input id="auto-join" type="checkbox" />
+        <span>Auto-join latest HR invite</span>
+      </label>
+      <div id="auto-banner" class="auto-banner off">Auto-join is off. Lisa joins only when you click Join Teams.</div>
+      <div class="demo-note">
+        <strong>Teams-only demo mode</strong>
+        <span>When you join a Teams meeting, the page Lisa is automatically disabled and the operator page becomes a control/monitor panel. Only the Teams Lisa is active &mdash; she hears the meeting's remote audio and replies into Teams with audio and avatar video. The operator page mutes Teams' incoming audio so a single laptop does not echo. Use the <em>Test Teams Lisa</em> box below to inject a text turn into the Teams session without using the laptop mic.</span>
+      </div>
+      <div class="preflight-panel">
+        <div class="preflight-header">
+          <span>Pre-flight</span>
+          <button id="preflight-refresh-btn" class="secondary small-button" type="button">Run checks</button>
+        </div>
+        <div class="preflight-list">
+          <div id="pf-voice" class="preflight-item pending"><span>Voice Live endpoint</span><strong>checking</strong></div>
+          <div id="pf-acs" class="preflight-item pending"><span>ACS token endpoint</span><strong>checking</strong></div>
+          <div id="pf-mic" class="preflight-item pending"><span>Mic permission</span><strong>checking</strong></div>
+          <div id="pf-browser" class="preflight-item pending"><span>Browser support</span><strong>checking</strong></div>
+          <div id="pf-invite" class="preflight-item pending"><span>Latest Teams invite</span><strong>checking</strong></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <label>
+          Display name
+          <input id="display-name" type="text" value="Lisa HR" />
+        </label>
+        <label>
+          Voice
+          <input id="voice-name" type="text" value="en-US-AvaMultilingualNeural" />
+        </label>
+      </div>
+      <div class="grid-2">
+        <label>
+          Avatar character
+          <input id="avatar-character" type="text" value="meg" />
+        </label>
+        <label>
+          Avatar style
+          <input id="avatar-style" type="text" value="business" />
+        </label>
+      </div>
+      <label>
+        Lisa instructions fallback
+        <textarea id="instructions" rows="5"></textarea>
+      </label>
+      <div class="button-row">
+        <button id="connect-btn" type="button">Connect Voice Live</button>
+        <button id="mic-btn" type="button" disabled>Mic</button>
+        <button id="join-btn" type="button">Join Teams</button>
+      </div>
+      <button id="leave-btn" class="danger-button" type="button">Leave Meeting (cleanup all)</button>
+      <div class="text-row">
+        <input id="text-input" type="text" placeholder="Send a text turn to page Lisa (only when not in Teams)" />
+        <button id="send-text-btn" type="button" disabled>Send</button>
+      </div>
+      <div class="text-row">
+        <input id="teams-test-input" type="text" placeholder="Test Teams Lisa (sends a text turn into the Teams session only)" />
+        <button id="teams-test-btn" type="button" disabled>Send to Teams Lisa</button>
+      </div>
+      <button id="download-log-btn" class="secondary full-width" type="button">Download Operator Log</button>
+      <pre id="log" class="log"></pre>
+    </section>
+  </main>
+  <script src="/acs-calling.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

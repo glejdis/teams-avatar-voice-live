@@ -1,0 +1,49 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Avatar stack — dev parameters (single instance, no AppGw, alerts off)
+// ─────────────────────────────────────────────────────────────────────────────
+using '../avatar-stack.bicep'
+
+param location = 'swedencentral'
+param namePrefix = '<NAME_PREFIX_DEV>'
+param tags = {
+  workload: 'avatar'
+  managedBy: 'bicep'
+  env: 'dev'
+}
+
+param foundryAccountName = '<FOUNDRY_ACCOUNT_NAME>'
+param foundryProjectName = '<FOUNDRY_PROJECT_NAME>'
+param agentName = 'lisa'
+param agentVersion = '5'
+param azureTenantId = '<TENANT_ID>'
+param voiceLiveApiVersion = '2026-01-01-preview'
+param voiceLiveVoice = 'en-US-AvaMultilingualNeural'
+param avatarCharacter = 'lisa'
+param avatarStyle = 'casual-sitting'
+// Optional avatar background. Leave empty for transparent (Voice Live default).
+// Use either an image URL (must be public HTTPS so Voice Live can fetch it)
+// or a hex color — image takes precedence if both are set.
+// param avatarBackgroundImageUrl = 'https://<your-cdn>/background.png'
+// param avatarBackgroundColor = '#FFFFFFFF'
+param agentLanguage = 'en'
+param acrName = '<ACR_NAME>'
+param deployStorageAccountName = '<DEPLOY_STORAGE_ACCOUNT>'
+
+param adminPassword = ''
+param bootstrapZipUrl = ''
+
+param vmssInstanceCount = 1
+param vmSize = 'Standard_D2s_v5'
+param adminUsername = 'azureuser'
+param vmssDnsLabelPrefix = '<VMSS_DNS_LABEL_DEV>'
+
+param alertEmail = ''
+param enableAppGateway = false
+param appGwKvCertId = ''
+param appGwIdentityId = ''
+
+param vnetAddressSpace = '10.43.0.0/16'
+param vmssSubnetPrefix = '10.43.0.0/24'
+param appGwSubnetPrefix = '10.43.1.0/27'
+param bastionSubnetPrefix = '10.43.2.0/26'
+param privateLinkSubnetPrefix = '10.43.3.0/27'

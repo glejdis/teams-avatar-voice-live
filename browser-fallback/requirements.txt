@@ -1,0 +1,7 @@
+fastapi>=0.115.0
+uvicorn>=0.30.0
+python-dotenv>=1.0.0
+azure-identity>=1.19.0
+azure-core>=1.30.0
+azure-ai-voicelive[aiohttp]>=1.2.0b5
+azure-communication-identity>=1.5.0

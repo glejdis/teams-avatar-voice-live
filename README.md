@@ -1,0 +1,159 @@
+# Teams Avatar Voice Live
+
+> An AI agent that joins a Microsoft Teams meeting as a video avatar driven by
+> **Azure Voice Live**, and sends the invite email itself. Ships a worked
+> example (Lisa, an HR screener) with the persona externalised to a Markdown
+> file — swap her for any role in seconds.
+
+**License:** MIT  ·  **Python:** 3.11+  ·  **Status:** v0.1.3
+
+---
+
+## What you get
+
+![End-to-end architecture](docs/diagrams/architecture_view.png)
+
+> **Editable source:** [`architecture.drawio`](docs/diagrams/architecture.drawio)
+> (open at [app.diagrams.net](https://app.diagrams.net)).
+> See [`docs/diagrams/README.md`](docs/diagrams/README.md) for details.
+
+Prose walkthrough + request/response sequences: [`docs/architecture.md`](docs/architecture.md).
+
+## Quickstart
+
+```bash
+git clone --recursive https://github.com/glejdis/teams_avatar_voice_live.git
+cd teams_avatar_voice_live
+python -m venv .venv && . .venv/bin/activate    # or .\.venv\Scripts\Activate.ps1 on Windows
+pip install -e .[web]                            # core + launcher; web extras optional
+
+cp .env.example .env
+# Fill in GRAPH_* (Entra app + organiser mailbox object ID) at minimum.
+# Optional: set BRAND_NAME=<Your Company> so invite emails read
+# "Thank you for applying at <Your Company>" instead of the default "Contoso".
+
+python -m launcher schedule \
+    --to alice@example.com \
+    --start +5 \
+    --subject "Demo: Avatar Interview" \
+    --mode browser_webrtc
+```
+
+For the **production VMSS path**, see [`docs/DEPLOY.md`](docs/DEPLOY.md).
+For day-2 ops (cost control, troubleshooting), see [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
+To **recreate or tear down individual components** (bastion, VMSS, orphan PIPs) without redeploying the whole stack, see
+[`infra/README.md#recover-individual-components`](infra/README.md#recover-individual-components).
+
+## 30-second smoke test (the browser path)
+
+Just want to *see* the avatar in a Teams meeting without setting up the
+Graph app, OIDC, or VMSS? The browser-fallback path needs only an ACS
+connection string and a Voice Live endpoint:
+
+```bash
+git clone https://github.com/glejdis/teams_avatar_voice_live.git
+cd teams_avatar_voice_live/browser-fallback
+
+python -m venv .venv && . .venv/bin/activate    # or .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+cp .env.example .env
+# Fill in AZURE_VOICELIVE_ENDPOINT + AZURE_COMMUNICATION_CONNECTION_STRING.
+
+python app.py                                   # serves http://localhost:3000
+```
+
+Open `http://localhost:3000` in Edge or Chrome (Teams calling rejects
+`127.0.0.1`, so use `localhost`), paste any existing Teams meeting URL into
+the field, and click **Join Teams**. The avatar joins as an ACS guest — no
+bot registration, no Bicep deploy. See
+[`browser-fallback/README.md`](browser-fallback/README.md) for the full env
+var list and operator workflow.
+
+## Two transports — both shipped, your choice
+
+`teams_avatar_voice_live` ships **two** ways to put the avatar into a Teams
+meeting. Pick by setting `TEAMS_JOIN_MODE=graph_bot|browser_webrtc` (or via
+the `--mode` CLI flag).
+
+| | **`graph_bot`** (VMSS Microsoft Graph calling bot) | **`browser_webrtc`** (ACS browser WebRTC) |
+|---|---|---|
+| **What it is** | A C# bot (from the `bot/` submodule) running on a Windows VMSS instance behind App Gateway. Joins Teams as a first-class meeting participant using Microsoft Graph Calls API. | A FastAPI app under `browser-fallback/` that hosts a single-page operator UI. Joins Teams as an ACS guest using the Azure Communication Services Web Calling SDK. |
+| **Best for** | Production, enterprise demos, hands-off operation, multiple concurrent meetings, recordings | Local dev, laptop demos, "I need it working in 10 min", offline-of-public-internet scenarios |
+| **Setup time** | ~1 hour bootstrap + 15 min per redeploy | ~5 min (`pip install` + `.env`) |
+| **Azure resources** | VNet · Key Vault · VMSS · App Gateway + WAF · ACR · Bastion · Log Analytics (all in `infra/`) | None beyond the Foundry agent itself |
+| **Bot/AAD prereqs** | Dedicated AAD bot app, Application Access Policy granting `Calls.JoinGroupCall.All` (up to 24 h to propagate), tenant admin approval | Just ACS connection string |
+| **Operator effort per meeting** | None — bot dials in automatically when `launcher dispatch` runs | Click "Join Teams" in the browser (or enable auto-join checkbox) |
+| **Concurrent meetings** | Many (instance scales out) | One per browser tab |
+| **Cost when idle** | VMSS VM + App Gateway run 24/7 (~70 % saving if you stop overnight — see [RUNBOOK §1](docs/RUNBOOK.md#1-stop-the-stack-overnight-the-biggest-cost-lever)) | Zero (only avatar streaming meter while a tab is open) |
+| **First-class Teams participant** | ✅ Yes — appears as `Lisa` in the roster, can be moderated, recorded by Teams compliance recording | ❌ No — ACS guest, "Limited call features" warning in Teams |
+| **Lobby behaviour** | Configurable (default: bypass-everyone) | Subject to tenant policy — often forced into lobby for guests |
+| **Patches needed** | None — bot uses Graph SDK directly | Yes — ACS browser SDK needs a small patch for `getMediaStream` (auto-applied by `browser-fallback/rebuild-acs/`) |
+| **Network exposure** | Public FQDN with TLS termination at App Gateway | None — runs on `localhost:3000` |
+| **Recommended for** | Anything that ships | Local iteration, persona tuning, "show this to a colleague tomorrow" |
+
+If you're not sure: **start with `browser_webrtc`** to get a working demo in
+minutes, then switch to `graph_bot` once you're past the persona / voice /
+prompt-engineering loop.
+
+## Personas — Lisa is just the example
+
+The shipped persona is **Lisa**, an HR screening assistant — the same one
+this codebase was originally extracted from. Her full prompt lives in a
+single Markdown file:
+
+```
+hosted-agent/personas/lisa.md
+```
+
+To swap her for any other persona (customer support, sales SDR, scheduling
+assistant, language tutor), either edit `lisa.md` in place, or write a new
+file and point at it:
+
+```bash
+cp hosted-agent/personas/lisa.md hosted-agent/personas/support_agent.md
+# edit support_agent.md
+echo "PERSONA_FILE=personas/support_agent.md" >> hosted-agent/.env
+```
+
+See [`hosted-agent/personas/README.md`](hosted-agent/personas/README.md) for
+authoring guidance and example fragments for non-HR roles.
+
+## Repo layout
+
+```
+teams_avatar_voice_live/
+├── core/              # client factories + AgentConfig (shared by launcher + agent)
+├── launcher/          # CLI (`python -m launcher schedule …`) + optional FastAPI
+│   ├── graph_client.py     # create Teams meeting, send invite email, invite bot
+│   ├── bot_dispatcher.py   # one `dispatch(join_url, mode=…)` — routes to either transport
+│   ├── cli.py / web.py     # front doors
+│
+├── hosted-agent/      # Foundry-hosted container — talks to Voice Live
+│   ├── personas/      # editable Markdown persona files
+│   └── tools/         # agent function tools (example: job_requirements)
+│
+├── bot/               # git submodule → glejdis/my-echobot-repo (C# Graph bot + sidecar)
+├── browser-fallback/  # ACS browser WebRTC operator UI (local dev)
+├── infra/             # Bicep: VNet, KV, VMSS, App Gateway, monitor
+├── scripts/           # bootstrap-oidc, vmss install/push, ops (cost control)
+├── .github/workflows/ # infra-deploy, agent-deploy, secret-rotation
+└── docs/              # architecture · DEPLOY · RUNBOOK
+```
+
+## Documentation
+
+- [`docs/architecture.md`](docs/architecture.md) — components, sequence, region notes
+- [`docs/DEPLOY.md`](docs/DEPLOY.md) — one-pager for the production VMSS rollout
+- [`docs/RUNBOOK.md`](docs/RUNBOOK.md) — day-2 ops: cost control, demo flow, troubleshooting
+- [`infra/README.md`](infra/README.md) — Bicep module reference, plus targeted recipes for [recovering individual components](infra/README.md#recover-individual-components) (bastion / VMSS / orphan PIPs) after cost cleanup
+
+## Contributing
+
+PRs welcome. The persona content in `hosted-agent/personas/lisa.md` is
+deliberately verbose so it works out of the box — if you write a tighter
+generic persona, please send it in.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

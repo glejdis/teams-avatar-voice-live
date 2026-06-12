@@ -1,0 +1,49 @@
+{
+  "//": "Voice Live runtime configuration for the Lisa hosted Foundry agent.",
+  "//1": "Attached to the agent definition under metadata['microsoft.voice-live.configuration'].",
+  "//2": "Agent mode (Voice Live) requires this block — without it, the WSS session has no",
+  "//3": "voice/VAD/transcription parameters and session.update is rejected.",
+  "//4": "Reference: https://learn.microsoft.com/azure/ai-services/speech-service/voice-live-agents-quickstart",
+
+  "voice": {
+    "name": "en-US-AvaMultilingualNeural",
+    "type": "azure-standard"
+  },
+
+  "turn_detection": {
+    "type": "azure_semantic_vad",
+    "threshold": 0.3,
+    "prefix_padding_ms": 200,
+    "silence_duration_ms": 500,
+    "remove_filler_words": false,
+    "end_of_utterance_detection": {
+      "model": "semantic_detection_v1",
+      "threshold": 0.01,
+      "timeout": 4
+    }
+  },
+
+  "input_audio_transcription": {
+    "model": "azure-speech",
+    "language": "en"
+  },
+
+  "input_audio_noise_reduction": {
+    "type": "azure_deep_noise_suppression"
+  },
+
+  "input_audio_echo_cancellation": {
+    "type": "server_echo_cancellation"
+  },
+
+  "avatar": {
+    "character": "lisa",
+    "style": "casual-sitting",
+    "video": {
+      "codec": "h264",
+      "bitrate": 2000000,
+      "crop": { "top_left": [0, 0], "bottom_right": [1920, 1080] },
+      "background": { "color": "#FFFFFFFF" }
+    }
+  }
+}

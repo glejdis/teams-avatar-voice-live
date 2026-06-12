@@ -1,0 +1,77 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Avatar stack — production parameters
+//
+// Deploy with:
+//   az deployment group create \
+//     -g <RESOURCE_GROUP_PROD> \
+//     -f infra/avatar-stack.bicep \
+//     -p infra/params/prod.bicepparam \
+//     -p adminPassword=$env:VMSS_ADMIN_PASSWORD
+// ─────────────────────────────────────────────────────────────────────────────
+using '../avatar-stack.bicep'
+
+param location = 'swedencentral'
+param namePrefix = '<NAME_PREFIX>'
+param tags = {
+  workload: 'avatar'
+  managedBy: 'bicep'
+  env: 'prod'
+  costCenter: 'teams-avatar-voice-live'
+}
+
+// Existing resources (deployed by main.bicep)
+param foundryAccountName = '<FOUNDRY_ACCOUNT_NAME>'
+param foundryProjectName = '<FOUNDRY_PROJECT_NAME>'
+param agentName = 'lisa'
+param agentVersion = '10'
+param azureTenantId = '<TENANT_ID>'
+param voiceLiveApiVersion = '2026-01-01-preview'
+param voiceLiveVoice = 'en-US-AvaMultilingualNeural'
+param avatarCharacter = 'lisa'
+param avatarStyle = 'casual-sitting'
+// Optional avatar background. Leave empty for transparent (Voice Live default).
+// Use either an image URL (must be public HTTPS so Voice Live can fetch it)
+// or a hex color — image takes precedence if both are set.
+// param avatarBackgroundImageUrl = 'https://<your-cdn>/background.png'
+// param avatarBackgroundColor = '#FFFFFFFF'
+param agentLanguage = 'en'
+param acrName = '<ACR_NAME>'
+param deployStorageAccountName = '<DEPLOY_STORAGE_ACCOUNT>'
+
+// Set adminPassword via CLI -p override (do NOT commit secrets).
+// Bootstrap artifacts are durable blob URLs. The VMSS system-assigned managed
+// identity reads them through storage RBAC and the vmss subnet service endpoint.
+param adminPassword = ''
+param bootstrapZipUrl = 'https://<DEPLOY_STORAGE_ACCOUNT>.blob.core.windows.net/agent-artifacts/lisa-latest.zip'
+param installScriptUrl = 'https://<DEPLOY_STORAGE_ACCOUNT>.blob.core.windows.net/agent-artifacts/install-latest.ps1'
+param cseRevision = '20260518-v10-envonly-sidecar'
+
+// Capacity. Microsoft.Skype.Bots.Media is single-active per call so 2 gives
+// hot standby for fail-fast restarts, NOT concurrency.
+param vmssInstanceCount = 2
+param vmSize = 'Standard_D4s_v5'
+param adminUsername = 'azureuser'
+param vmssDnsLabelPrefix = '<VMSS_DNS_LABEL>'
+
+// Operations
+param alertEmail = ''  // set to ops mailing list
+
+// Key Vault access path. Production keeps public data-plane access disabled
+// and uses a private endpoint plus privatelink.vaultcore.azure.net.
+param keyVaultPublicNetworkAccess = 'Disabled'
+param keyVaultNetworkAclsDefaultAction = 'Deny'
+param enableKeyVaultPrivateEndpoint = true
+param keyVaultPrivateDnsZoneName = 'privatelink.vaultcore.azure.net'
+
+// AppGw — disabled until Phase F. Per-instance public IPs handle 443+8445.
+param enableAppGateway = false
+param appGwKvCertId = ''
+param appGwIdentityId = ''
+param appGwDnsLabelPrefix = '<APP_GW_DNS_LABEL>'
+
+// Network
+param vnetAddressSpace = '10.42.0.0/16'
+param vmssSubnetPrefix = '10.42.0.0/24'
+param appGwSubnetPrefix = '10.42.1.0/27'
+param bastionSubnetPrefix = '10.42.2.0/26'
+param privateLinkSubnetPrefix = '10.42.3.0/27'

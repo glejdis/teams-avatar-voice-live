@@ -1,0 +1,86 @@
+name: infra-deploy
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Deploy infra/avatar-stack.bicep via OIDC. PR and push run what-if; manual
+# dispatch applies. Full apply includes RBAC roleAssignments and requires the
+# deploy identity to have Microsoft.Authorization/roleAssignments/write.
+#
+# Required GitHub Environment ("prod"):
+#   - secrets:    AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID,
+#                 VMSS_ADMIN_PASSWORD
+#   - vars:       AZURE_RESOURCE_GROUP
+#
+# Set up by running scripts/bootstrap-oidc.ps1 once. Until then both jobs
+# are guarded on `vars.AZURE_RESOURCE_GROUP` so freshly-forked repos
+# (and PRs that touch infra/ before OIDC is wired up) see a clean
+# "skipped" status instead of an `azure/login` failure.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra-deploy.yml'
+  pull_request:
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Environment (dev | prod)'
+        required: true
+        default: 'prod'
+        type: choice
+        options: [ dev, prod ]
+
+permissions:
+  id-token: write   # required for OIDC
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: infra-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  what-if:
+    if: github.event_name != 'workflow_dispatch' && vars.AZURE_RESOURCE_GROUP != ''
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Bicep what-if
+        run: |
+          az deployment group what-if \
+            -g "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            -f infra/avatar-stack.bicep \
+            -p infra/params/prod.bicepparam \
+            -p adminPassword="${{ secrets.VMSS_ADMIN_PASSWORD }}"
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && vars.AZURE_RESOURCE_GROUP != ''
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env || 'prod' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Bicep deploy
+        run: |
+          ENV="${{ inputs.env || 'prod' }}"
+          az deployment group create \
+            -g "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            -f infra/avatar-stack.bicep \
+            -p infra/params/${ENV}.bicepparam \
+            -p adminPassword="${{ secrets.VMSS_ADMIN_PASSWORD }}" \
+            --query 'properties.outputs'

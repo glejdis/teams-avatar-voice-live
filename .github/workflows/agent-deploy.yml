@@ -1,0 +1,326 @@
+name: agent-deploy
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Build + ship the avatar stack on every push to its source paths:
+#   1) Build the hosted-agent container → push to ACR with a fresh unique tag
+#      → register a new Foundry hosted agent version → write version.lock.
+#   2) Build EchoBot (.NET 8) self-contained → zip with sidecar + tools
+#      → upload to deploy storage with a versioned name → save as
+#      LATEST blob URL (or rotated container).
+#   3) Optionally trigger VMSS update-instances when explicitly requested.
+#
+# Foundry hosted agent gotcha: always use a fresh image tag per deploy.
+# Re-pushing the same tag does NOT update a running agent version.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'hosted-agent/**'
+      - 'bot/src/**'
+      - 'bot/avatar-sidecar/**'
+      - 'scripts/vmss/install.ps1'
+      - '.github/workflows/agent-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      skip_agent:
+        description: 'Skip Foundry agent build/register'
+        type: boolean
+        default: false
+      skip_vmss:
+        description: 'Skip VMSS artifact build/upgrade'
+        type: boolean
+        default: false
+      run_vmss_update:
+        description: 'After artifact upload, trigger VMSS update-instances for all instances'
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: write          # commit version.lock back
+  pull-requests: write     # peter-evans/create-pull-request
+
+concurrency:
+  group: agent-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Resolved at runtime from main.bicep deployment outputs (NOT hard-coded
+  # because main.bicep generates names with uniqueString() unless overridden).
+  # Set these as GitHub Variables on the prod environment, OR rely on the
+  # 'resolve' job below which queries the deployment outputs.
+  FOUNDRY_RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+  FOUNDRY_ACCOUNT: ${{ vars.FOUNDRY_ACCOUNT_NAME }}
+  FOUNDRY_PROJECT: ${{ vars.FOUNDRY_PROJECT_NAME }}
+  # Default shipped persona name; change here (and in personas/) to ship
+  # a different persona under a different agent name.
+  AGENT_NAME: lisa
+  ARTIFACT_CONTAINER: agent-artifacts
+
+jobs:
+  resolve:
+    if: vars.AZURE_RESOURCE_GROUP != ''
+    runs-on: ubuntu-latest
+    environment: prod
+    outputs:
+      acr_name: ${{ steps.out.outputs.acr_name }}
+      storage_account: ${{ steps.out.outputs.storage_account }}
+      vmss_name: ${{ steps.out.outputs.vmss_name }}
+      key_vault: ${{ steps.out.outputs.key_vault }}
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Read main.bicep deployment outputs
+        id: out
+        env:
+          RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+          DEPLOYMENT_NAME: ${{ vars.INFRA_DEPLOYMENT_NAME }}
+        run: |
+          set -euo pipefail
+          DN="${DEPLOYMENT_NAME:-main}"
+          OUT=$(az deployment group show -g "$RG" -n "$DN" --query properties.outputs -o json)
+          ACR=$(echo "$OUT" | jq -r '.acrName.value // empty')
+          SA=$(echo  "$OUT" | jq -r '.storageAccountName.value // empty')
+          VMSS=$(echo "$OUT" | jq -r '.vmssName.value // empty')
+          KV=$(echo "$OUT" | jq -r '.keyVaultName.value // empty')
+          # ACR + storage are always required; VMSS/KV only when the avatar
+          # stack was deployed (deployAvatarStack=true). Downstream jobs
+          # guard via skip_vmss / their own checks.
+          for v in "ACR=$ACR" "SA=$SA"; do
+            if [ -z "${v#*=}" ]; then
+              echo "::error::main.bicep output missing: $v" ; exit 1
+            fi
+          done
+          echo "acr_name=$ACR"        >> "$GITHUB_OUTPUT"
+          echo "storage_account=$SA"  >> "$GITHUB_OUTPUT"
+          echo "vmss_name=$VMSS"      >> "$GITHUB_OUTPUT"
+          echo "key_vault=$KV"        >> "$GITHUB_OUTPUT"
+
+  agent:
+    needs: resolve
+    if: ${{ !inputs.skip_agent }}
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      ACR_NAME: ${{ needs.resolve.outputs.acr_name }}
+    outputs:
+      image_ref: ${{ steps.build.outputs.image_ref }}
+      agent_version: ${{ steps.register.outputs.agent_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # hosted-agent build doesn't need the bot submodule.
+          submodules: false
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build & push agent container (fresh tag per deploy)
+        id: build
+        run: |
+          TAG="$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
+          IMAGE="${ACR_NAME}.azurecr.io/${AGENT_NAME}:${TAG}"
+          az acr build -r "$ACR_NAME" -t "${AGENT_NAME}:${TAG}" -t "${AGENT_NAME}:latest" hosted-agent/
+          echo "image_ref=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG"          >> "$GITHUB_OUTPUT"
+
+      - name: Register new Foundry agent version
+        id: register
+        env:
+          IMAGE_REF: ${{ steps.build.outputs.image_ref }}
+        run: |
+          # az cognitiveservices agent create auto-bumps version.
+          # --skip-acr-check: project MI has AcrPull granted via Bicep; the
+          # CLI's validation endpoint currently 400s for cross-RG ACR refs.
+          OUT=$(az cognitiveservices agent create \
+            --account-name "$FOUNDRY_ACCOUNT" \
+            --project-name "$FOUNDRY_PROJECT" \
+            --name "$AGENT_NAME" \
+            --image "$IMAGE_REF" \
+            --protocol responses \
+            --protocol-version 1.0.0 \
+            --env \
+              "AGENT_FOUNDRY_MODEL_DEPLOYMENT_NAME=gpt-4.1-mini" \
+              "AGENT_FOUNDRY_PROJECT_ENDPOINT=https://${FOUNDRY_ACCOUNT}.services.ai.azure.com/api/projects/${FOUNDRY_PROJECT}" \
+              "AGENT_AZURE_OPENAI_API_VERSION=2025-01-01-preview" \
+            --skip-acr-check \
+            -o json)
+          VER=$(echo "$OUT" | jq -r '.version // .properties.version // empty')
+          echo "agent_version=$VER" >> "$GITHUB_OUTPUT"
+          echo "Registered $AGENT_NAME version=$VER image=$IMAGE_REF"
+
+      - name: Update version.lock
+        env:
+          AGENT_VERSION: ${{ steps.register.outputs.agent_version }}
+          IMAGE_REF: ${{ steps.build.outputs.image_ref }}
+        run: |
+          cat > hosted-agent/version.lock <<EOF
+          # Auto-generated by .github/workflows/agent-deploy.yml — do not edit by hand.
+          agent_name=${AGENT_NAME}
+          agent_version=${AGENT_VERSION}
+          image_ref=${IMAGE_REF}
+          deployed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          commit=${GITHUB_SHA}
+          EOF
+
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: 'chore(agent): bump version.lock'
+          title: 'chore(agent): bump version.lock'
+          branch: chore/agent-version-lock
+          add-paths: |
+            hosted-agent/version.lock
+
+  vmss:
+    needs: [resolve, agent]
+    if: ${{ !inputs.skip_vmss && always() && needs.resolve.result == 'success' }}
+    runs-on: windows-latest
+    environment: prod
+    env:
+      STORAGE_ACCOUNT: ${{ needs.resolve.outputs.storage_account }}
+      VMSS_NAME: ${{ needs.resolve.outputs.vmss_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Outer repo uses the default GITHUB_TOKEN (auto-scoped to this repo).
+          # Private bot/ submodule is cloned in the next step with a PAT
+          # scoped only to the submodule repo. If your bot submodule is
+          # public, you can drop the SUBMODULE_TOKEN step entirely and set
+          # `submodules: true` here instead.
+          submodules: false
+
+      - name: Init bot submodule with PAT
+        shell: pwsh
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.SUBMODULE_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git submodule update --init --recursive
+          # No cleanup needed: ephemeral runner is discarded after the job.
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Python for sidecar wheelhouse
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Publish EchoBot
+        shell: pwsh
+        run: |
+          dotnet publish bot/src/EchoBot/EchoBot.csproj `
+            -c Release -r win-x64 --self-contained true `
+            -o artifact/EchoBot `
+            /p:PublishSingleFile=false /p:DebugType=None /p:DebugSymbols=false
+
+      - name: Stage sidecar + scripts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifact/sidecar | Out-Null
+          Copy-Item bot/avatar-sidecar/* artifact/sidecar/ -Recurse -Force
+          New-Item -ItemType Directory -Force -Path artifact/sidecar/wheelhouse | Out-Null
+          python -m pip install --upgrade pip
+          python -m pip download `
+            --dest artifact/sidecar/wheelhouse `
+            --only-binary=:all: `
+            --platform win_amd64 `
+            --python-version 312 `
+            --implementation cp `
+            --abi cp312 `
+            -r bot/avatar-sidecar/requirements.txt
+          $wheelCount = @(Get-ChildItem artifact/sidecar/wheelhouse -Filter '*.whl' -File).Count
+          if ($wheelCount -eq 0) { throw 'No sidecar wheels were downloaded into artifact/sidecar/wheelhouse.' }
+          Write-Host "Staged $wheelCount sidecar wheels for offline VMSS install."
+          New-Item -ItemType Directory -Force -Path artifact/tools  | Out-Null
+          Copy-Item scripts/vmss/install.ps1 artifact/install.ps1 -Force
+          # Tools (nssm.exe, python installer, ffmpeg) MUST be pre-staged in the
+          # storage account at $(STORAGE_ACCOUNT)/$(ARTIFACT_CONTAINER)/tools-cache/
+          # before the VMSS instances boot. The download is best-effort here:
+          # if the cache is empty (first run, before user seeding), continue
+          # with an empty artifact/tools/ so the pipeline still validates the
+          # build + zip + upload path. install.ps1 on the VM will fail loudly
+          # at first boot if tools are missing.
+          $hasTools = $false
+          try {
+            az storage blob download-batch `
+              --account-name "$env:STORAGE_ACCOUNT" `
+              -s "$env:ARTIFACT_CONTAINER" `
+              --pattern 'tools-cache/*' `
+              -d artifact/ `
+              --auth-mode login
+            if ($LASTEXITCODE -ne 0) { throw "az exit $LASTEXITCODE" }
+            $hasTools = Test-Path artifact/tools-cache
+          } catch {
+            Write-Host "::warning::tools-cache download failed: $($_.Exception.Message)"
+            $global:LASTEXITCODE = 0
+          }
+          if ($hasTools) {
+            Move-Item artifact/tools-cache/* artifact/tools/ -Force
+            Remove-Item artifact/tools-cache -Recurse -Force
+          } else {
+            Write-Host "::warning::No tools-cache found in $env:STORAGE_ACCOUNT/$env:ARTIFACT_CONTAINER/tools-cache/. Seed nssm.exe, python installer, ffmpeg before first VMSS deploy."
+          }
+
+      - name: Zip artifact
+        shell: pwsh
+        run: |
+          $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+          $sha   = "${env:GITHUB_SHA}".Substring(0,7)
+          $name  = "agent-$stamp-$sha.zip"
+          Compress-Archive -Path artifact/* -DestinationPath $name -Force
+          echo "ZIP_NAME=$name" | Out-File -Append -FilePath $env:GITHUB_ENV
+
+      - name: Upload artifact zip
+        shell: pwsh
+        run: |
+          az storage blob upload `
+            --account-name "$env:STORAGE_ACCOUNT" `
+            -c "$env:ARTIFACT_CONTAINER" `
+            -f "$env:ZIP_NAME" `
+            -n "$env:ZIP_NAME" `
+            --overwrite false `
+            --auth-mode login
+          # Update LATEST pointer (just a copy with stable name).
+          az storage blob upload `
+            --account-name "$env:STORAGE_ACCOUNT" `
+            -c "$env:ARTIFACT_CONTAINER" `
+            -f "$env:ZIP_NAME" `
+            -n "agent-latest.zip" `
+            --overwrite true `
+            --auth-mode login
+          # CSE on VMSS downloads install.ps1 separately (it can't extract zips).
+          # Upload it as a standalone blob so the CSE fileUris can point at it.
+          az storage blob upload `
+            --account-name "$env:STORAGE_ACCOUNT" `
+            -c "$env:ARTIFACT_CONTAINER" `
+            -f "scripts/vmss/install.ps1" `
+            -n "install-latest.ps1" `
+            --overwrite true `
+            --auth-mode login
+
+      - name: Trigger VMSS rolling upgrade
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_vmss_update }}
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:VMSS_NAME)) {
+            Write-Host "::notice::VMSS_NAME is empty (avatar stack not deployed yet); skipping rolling upgrade."
+            exit 0
+          }
+          az vmss update-instances `
+            -g "${{ vars.AZURE_RESOURCE_GROUP }}" `
+            -n "$env:VMSS_NAME" `
+            --instance-ids '*'
