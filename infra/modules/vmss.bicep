@@ -190,8 +190,11 @@ resource vmss 'Microsoft.Compute/virtualMachineScaleSets@2024-07-01' = {
       }
       storageProfile: {
         imageReference: {
+          // Use the 'windowsserver2022' Marketplace offer. The legacy 'WindowsServer'
+          // offer is deprecated under the .NET 6 EOL program (WS2022 images lose
+          // security updates after 2026-06-09). Same SKU/version; offer-only change.
           publisher: 'MicrosoftWindowsServer'
-          offer: 'WindowsServer'
+          offer: 'windowsserver2022'
           sku: '2022-datacenter-azure-edition'
           version: 'latest'
         }
