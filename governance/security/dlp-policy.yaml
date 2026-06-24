@@ -1,0 +1,70 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# DLP & data-classification policy — runtime data protection for the avatar.
+#
+# Declarative source of truth for agentgov.security. It mirrors what a central
+# Microsoft Purview DLP + sensitivity-label setup enforces, so the agent applies
+# the same rules inline on every turn and the audit trail is consistent with the
+# platform policy.
+#
+# - info_types:         sensitive information types to detect in agent I/O
+# - actions:            what to do when sensitive info is found, by the data
+#                       sensitivity declared in governance/agent-registry.yaml
+# - sensitivity_labels: registry data.sensitivity -> sensitivity label
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: 1
+
+# Map registry `data.sensitivity` to the sensitivity label applied to the
+# agent's data and outputs.
+sensitivity_labels:
+  public: Public
+  internal: Internal
+  confidential: Confidential
+  restricted: Highly Confidential
+
+# Action taken when a sensitive info type appears in agent input/output, keyed
+# by the agent's declared data sensitivity:
+#   audit  - allow, but record the finding
+#   redact - replace the sensitive spans, then allow
+#   block  - refuse to surface the content
+actions:
+  public: audit
+  internal: audit
+  confidential: redact
+  restricted: block
+
+# Fallback when an agent's sensitivity is missing/unknown.
+default_action: redact
+
+# Sensitive information types. Regex-based detectors (Python `re`).
+# Keep patterns conservative to limit false positives.
+info_types:
+  - id: email
+    description: Email address
+    severity: medium
+    pattern: '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+
+  - id: iban
+    description: IBAN (incl. German DE..)
+    severity: high
+    pattern: '\b[A-Z]{2}\d{2}(?:[ ]?\d){10,30}\b'
+
+  - id: phone
+    description: Phone number (international / national)
+    severity: low
+    pattern: '(?:(?:\+|00)\d{1,3}[ /-]?)?(?:\(?\d{2,5}\)?[ /-]?)\d{3,}(?:[ /-]?\d{2,})+'
+
+  - id: de_tax_id
+    description: German tax id (Steuer-IdNr, 11 digits)
+    severity: high
+    pattern: '\b\d{11}\b'
+
+  - id: de_social_insurance
+    description: German social insurance number (Sozialversicherungsnummer)
+    severity: high
+    pattern: '\b\d{2}\d{6}[A-Z]\d{3}\b'
+
+  - id: salary
+    description: Salary / compensation disclosure
+    severity: high
+    pattern: '(?i)\b(?:salary|gehalt|compensation|verg[uü]tung|bonus|jahresgehalt)\b[^.\n]{0,40}?(?:€|eur|\d{3,})'

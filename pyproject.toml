@@ -58,7 +58,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["core*", "launcher*"]
+include = ["core*", "launcher*", "agentgov*"]
 
 [tool.ruff]
 line-length = 100
@@ -75,5 +75,5 @@ ignore = ["E501"]  # line-length handled by formatter
 # Tests live next to the packages they cover. The `bot/` submodule and
 # `browser-fallback/` ship their own test suites with their own deps; pytest
 # from the root must not try to collect them.
-testpaths = ["tests", "core", "launcher"]
+testpaths = ["tests", "core", "launcher", "agentgov", "governance/tests"]
 norecursedirs = ["bot", "browser-fallback", "hosted-agent", "infra", ".venv"]

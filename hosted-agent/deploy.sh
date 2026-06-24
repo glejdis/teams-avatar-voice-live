@@ -43,9 +43,13 @@ az account set --subscription "$AZURE_SUBSCRIPTION"
 #    required). Fall back to local docker build/push if the user explicitly
 #    sets USE_LOCAL_DOCKER=1.
 echo "▶ Building $IMAGE"
+# Build context is the repo root (one level up) so the Dockerfile can COPY the
+# agentgov governance package + policy files into the image. -f selects the
+# hosted-agent Dockerfile; a root .dockerignore keeps the context lean.
+BUILD_CONTEXT="$(cd "$SCRIPT_DIR/.." && pwd)"
 if [[ "${USE_LOCAL_DOCKER:-0}" == "1" ]]; then
   az acr login -n "$ACR_NAME"
-  docker build --platform linux/amd64 -t "$IMAGE" "$SCRIPT_DIR"
+  docker build --platform linux/amd64 -t "$IMAGE" -f "$SCRIPT_DIR/Dockerfile" "$BUILD_CONTEXT"
   docker push "$IMAGE"
 else
   # Force UTF-8 to avoid Windows cp1252 cli crash on emoji-laden ACR build logs.
@@ -54,7 +58,8 @@ else
     --image "lisa-foundry-agent:${IMAGE_TAG}" \
     --platform linux/amd64 \
     --no-logs \
-    "$SCRIPT_DIR"
+    -f "$SCRIPT_DIR/Dockerfile" \
+    "$BUILD_CONTEXT"
 fi
 
 # 2b) Resolve digest and pin the agent to it.

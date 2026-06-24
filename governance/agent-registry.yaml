@@ -1,0 +1,78 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Agent Registry — teams-avatar-voice-live
+#
+# System of record for every governed agent identity in this repo. Each agent is
+# a first-class, governed identity: backing Entra identity, owner, purpose, data
+# exposure, least-privilege permissions, access gates, and lifecycle.
+#
+# This is the inventory an Agent 365 / Entra Agent ID registry (or any tooling)
+# consumes. Validated in CI by governance/validate_registry.py; the runtime guard
+# (agentgov.security.AgentGuard) reads this same file so enforcement and the
+# governed inventory never drift apart.
+#
+# Owners are roles/teams, never personal names (avoid storing personal data).
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: 1
+
+defaults:
+  tenant: teams-avatar-voice-live
+  identity_naming: "id-tva-<agent>"
+  # Allowed Azure built-in roles agents may hold (least-privilege catalogue).
+  azure_role_catalogue:
+    - Azure AI User
+    - Cognitive Services User
+    - Key Vault Secrets User
+    - Storage Blob Data Reader
+    - AcrPull
+
+agents:
+  - id: lisa-voice-avatar
+    display_name: Lisa — Voice Live Avatar (HR Screener)
+    app: hosted-agent
+    runtime: foundry-hosted
+    code_name: Lisa_HR_Screener
+    owner: HR AI Center of Excellence
+    business_owner: Talent Acquisition
+    purpose: >
+      Joins a Microsoft Teams meeting as a video avatar driven by Azure Voice
+      Live and conducts a short, structured first-screening interview. Schedules
+      the meeting and sends the candidate invite on behalf of the organising
+      recruiter. Advisory only — never makes a hiring decision.
+    data:
+      personal_data: true        # candidate voice, name, contact, answers
+      special_category: false
+      employment_decision: false # advisory screening; human owns the decision
+      sensitivity: confidential
+    human_oversight: >
+      Advisory first-screening only. A human recruiter reviews the transcript
+      and owns every next step and hiring decision; the avatar never decides.
+    co_determination: not_required
+    entra:
+      identity_name: id-tva-lisa
+      identity_type: user-assigned-managed-identity
+      status: planned
+    least_privilege:
+      # Delegated, On-Behalf-Of the signed-in organiser — NOT app-only .default.
+      # Mirrors launcher/graph_client.py `_DELEGATED_SCOPES` (+ Calendars on demand).
+      graph_scopes:
+        - User.Read
+        - OnlineMeetings.ReadWrite
+        - Mail.Send
+        - Calendars.ReadWrite
+      azure_roles:
+        - Azure AI User
+        - Cognitive Services User
+      data_scopes:
+        - candidate-contact
+        - interview-schedule
+        - interview-transcript
+        - job-requirements
+    access:
+      conditional_access: ca-agents-baseline
+      sensitive_data_groups:
+        # Captured interview transcripts (candidate PII) are gated to recruiters.
+        interview-transcript: [grp-tva-recruiters]
+    lifecycle: active
+    related_issue: ""
+    sub_agents: []

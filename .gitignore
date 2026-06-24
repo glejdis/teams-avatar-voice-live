@@ -220,3 +220,6 @@ __marimo__/
 # Runtime state written by launcher.bot_dispatcher (browser_webrtc mode)
 browser-fallback/data/
 
+# Tenant binding — filled-in copy with real Entra group / CA ids (never commit)
+governance/tenant/*.local.*
+

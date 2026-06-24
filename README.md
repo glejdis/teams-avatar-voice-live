@@ -135,11 +135,37 @@ teams_avatar_voice_live/
 │
 ├── bot/               # git submodule → glejdis/my-echobot-repo (C# Graph bot + sidecar)
 ├── browser-fallback/  # ACS browser WebRTC operator UI (local dev)
+├── agentgov/          # runtime governance seam (DLP · prompt-injection · audit · entitlement)
+├── governance/        # agent registry + validator + DLP policy + inventory dashboard
 ├── infra/             # Bicep: VNet, KV, VMSS, App Gateway, monitor
 ├── scripts/           # bootstrap-oidc, vmss install/push, ops (cost control)
-├── .github/workflows/ # infra-deploy, agent-deploy, secret-rotation
+├── .github/workflows/ # infra-deploy, agent-deploy, secret-rotation, governance-validate, python-tests
 └── docs/              # architecture · DEPLOY · RUNBOOK
 ```
+
+## Governance — the avatar is a first-class, governed agent identity
+
+Lisa takes free-form candidate speech and produces HR content, so the repo ships
+a small **governance seam** that enforces controls *as code* and *inline on
+every turn* — the same pattern a central Microsoft Purview + Defender + Entra
+setup would apply, but runnable on a laptop and gated in CI:
+
+| Layer | What it does | Where |
+| --- | --- | --- |
+| **Registry** | One governed identity per agent (owner, data exposure, least-privilege scopes, backing Entra identity, lifecycle) | [`governance/agent-registry.yaml`](governance/agent-registry.yaml) |
+| **Policy-as-code gate** | Rejects over-broad Graph scopes, missing human oversight, ungated sensitive data; blocks inventory drift | [`governance/validate_registry.py`](governance/validate_registry.py) · `.github/workflows/governance-validate.yml` |
+| **Runtime guard** | Screens prompt-injection, redacts PII (DLP), emits an attributable `AGENT_AUDIT` event every turn | [`agentgov/`](agentgov) |
+| **Wired into both transports** | Agent Framework middleware (hosted agent) + transcript boundaries (browser fallback) | [`hosted-agent/`](hosted-agent) · [`browser-fallback/`](browser-fallback) |
+
+```bash
+pip install pyyaml
+python governance/validate_registry.py            # policy-as-code gate
+python governance/generate_inventory.py            # regenerate the dashboard
+python -m unittest discover -s agentgov/tests -p "test_*.py"
+```
+
+See [`governance/README.md`](governance/README.md) for the full control list,
+the runtime API, and the request → register → provision → retire lifecycle.
 
 ## Documentation
 

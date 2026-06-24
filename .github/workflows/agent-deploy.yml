@@ -127,7 +127,9 @@ jobs:
         run: |
           TAG="$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
           IMAGE="${ACR_NAME}.azurecr.io/${AGENT_NAME}:${TAG}"
-          az acr build -r "$ACR_NAME" -t "${AGENT_NAME}:${TAG}" -t "${AGENT_NAME}:latest" hosted-agent/
+          # Build context is the repo root so the image can include the agentgov
+          # governance package + policy files (see hosted-agent/Dockerfile).
+          az acr build -r "$ACR_NAME" -t "${AGENT_NAME}:${TAG}" -t "${AGENT_NAME}:latest" -f hosted-agent/Dockerfile .
           echo "image_ref=$IMAGE" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG"          >> "$GITHUB_OUTPUT"
 
