@@ -33,11 +33,13 @@ import threading
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
-import msal
 import requests
+
+if TYPE_CHECKING:
+    import msal
 
 logger = logging.getLogger(__name__)
 
@@ -265,8 +267,10 @@ def _headers() -> dict[str, str]:
 
 # ── Delegated token (MSAL device-code flow, cached) ─────────────────────────
 
-def _get_msal_app() -> msal.PublicClientApplication:
+def _get_msal_app() -> "msal.PublicClientApplication":
     """Return a singleton PublicClientApplication with a persistent cache."""
+    import msal  # lazy — only the delegated-token flow needs MSAL
+
     global _msal_app  # noqa: PLW0603
 
     if _msal_app is not None:

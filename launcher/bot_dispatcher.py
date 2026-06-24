@@ -123,7 +123,12 @@ def dispatch(
     Returns
     -------
     dict
-        ``{"mode": str, "status": str, "details": {...}}``
+        ``{"mode": str, "status": str, "avatar_will_join": bool, "details": {...}}``.
+        ``avatar_will_join`` is ``True`` only when the graph_bot dial-in was
+        accepted; it is ``False`` for a failed dial-in or a browser_webrtc
+        handoff (where joining is deferred to a live browser). A loud warning is
+        logged and an ``avatar.join.*`` AGENT_AUDIT event emitted whenever no
+        avatar will actually join, so "invite emailed, nobody joined" is visible.
     """
     if not join_url:
         raise ValueError("join_url is required")
@@ -138,9 +143,23 @@ def dispatch(
             session_id=session_id,
             **{k: v for k, v in extra.items() if isinstance(v, str)},
         )
+        joined = bool(details.get("ok"))
+        if not joined:
+            logger.warning(
+                "AVATAR WILL NOT JOIN: graph_bot dial-in did not succeed "
+                "(skipped=%s error=%r). The meeting was created%s but no avatar "
+                "entered it. Check BOT_JOIN_ENDPOINT and the lisa-bot health; set "
+                "BOT_JOIN_REQUIRED=true to fail loudly instead of emailing a link "
+                "no one joins.",
+                details.get("skipped"),
+                details.get("error"),
+                " and the invite emailed" if email_sent_to else "",
+            )
+        _audit_join(effective_mode, "requested" if joined else "failed", session_id, email_sent_to)
         return {
             "mode": effective_mode,
-            "status": "join_requested" if details.get("ok") else "failed",
+            "status": "join_requested" if joined else "failed",
+            "avatar_will_join": joined,
             "details": details,
         }
 
@@ -152,8 +171,26 @@ def dispatch(
         email_sent_to=email_sent_to,
         extra=extra,
     )
+    logger.warning(
+        "AVATAR JOIN DEFERRED TO BROWSER (mode=browser_webrtc): the avatar will "
+        "NOT auto-join. An operator must open the browser-fallback page (or a live "
+        "auto-join tab must be running) to actually enter the meeting. For "
+        "hands-off joining set TEAMS_JOIN_MODE=graph_bot."
+    )
+    _audit_join(effective_mode, "deferred", session_id, email_sent_to)
     return {
         "mode": effective_mode,
         "status": "handoff_recorded",
+        "avatar_will_join": False,
         "details": {"latest_invite_path": str(target)},
     }
+
+
+def _audit_join(mode: str, outcome: str, session_id: str, email_sent_to: str) -> None:
+    """Best-effort governance audit of the join handoff (degrade-safe)."""
+    try:
+        from launcher.governance import audit_join
+
+        audit_join(mode=mode, outcome=outcome, session_id=session_id, organizer_mail=email_sent_to or None)
+    except Exception:  # noqa: BLE001
+        logger.debug("join governance audit failed", exc_info=True)

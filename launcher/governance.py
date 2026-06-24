@@ -80,3 +80,39 @@ def audit_invite_email(
         emit(event)
     except Exception:  # noqa: BLE001
         logger.debug("audit_invite_email failed", exc_info=True)
+
+
+def audit_join(
+    *,
+    mode: str,
+    outcome: str,
+    session_id: str = "",
+    organizer_oid: str = "",
+    organizer_mail: Optional[str] = None,
+) -> None:
+    """Emit an attributable audit event for the avatar-join handoff.
+
+    ``outcome`` is one of ``requested`` (graph_bot dial-in accepted),
+    ``failed`` (graph_bot dial-in skipped/failed — no avatar will join), or
+    ``deferred`` (browser_webrtc — join handed off to a live browser/auto-join).
+    Recorded as ``action="avatar.join.<outcome>"`` so operators can alert on a
+    meeting that no avatar entered. No-ops if the guard is disabled.
+    """
+    if _GUARD is None or emit is None or AuditEvent is None:
+        return
+    try:
+        emit(
+            AuditEvent(
+                agent_id=AGENT_ID,
+                action=f"avatar.join.{outcome}",
+                direction="output",
+                user_oid=organizer_oid or "",
+                user_mail=organizer_mail,
+                user_resolved=bool(organizer_oid),
+                data_scope=mode,
+                classification=_GUARD.dlp_policy.label_for(_GUARD.sensitivity),
+                decision="allowed",
+            )
+        )
+    except Exception:  # noqa: BLE001
+        logger.debug("audit_join failed", exc_info=True)
