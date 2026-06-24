@@ -43,6 +43,9 @@ jobs:
       - name: Check governance inventory is up to date
         run: python governance/generate_inventory.py --check
 
+      - name: Check agent365 Bicep params are up to date
+        run: python governance/generate_bicep_params.py --check
+
       - name: Run governance tooling tests
         run: python -m unittest discover -s governance/tests -p "test_*.py" -v
 

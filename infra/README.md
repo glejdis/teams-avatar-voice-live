@@ -9,13 +9,43 @@ infra/
 ├─ main.bicep                       # top-level: shared resources + optional avatar stack
 ├─ main.json                        # ARM compile of main.bicep (committed for diffability)
 ├─ avatar-stack.bicep               # avatar VMSS + KV + Bastion + Monitor (+ optional AppGw)
+├─ agent365.bicep                   # governance stack: agent identities + least-priv RBAC + audit sink
 ├─ vmss-bootstrap-extension.bicep   # standalone CSE re-runner (rare; usually triggered via main)
 ├─ keyvault-private-endpoint.bicep  # standalone KV-PE deploy (for recovery scenarios)
-├─ modules/                         # network / monitor / keyvault / vmss / bastion / rbac …
+├─ modules/                         # network / monitor / keyvault / vmss / bastion / rbac
+│  ├─ agent-identities.bicep        #   one User-Assigned MI per registered agent
+│  ├─ agent-rbac.bicep              #   least-privilege roles per agent (from the registry)
+│  └─ audit-sink.bicep              #   Log Analytics AgentAudit_CL table + Sentinel rule
 └─ params/
    ├─ dev.bicepparam.example        # template — copy to dev.bicepparam, fill in
-   └─ prod.bicepparam.example       # template — copy to prod.bicepparam, fill in
+   ├─ prod.bicepparam.example       # template — copy to prod.bicepparam, fill in
+   └─ agent365.params.json          # GENERATED from the registry (governance/generate_bicep_params.py)
 ```
+
+## Governance stack — `agent365.bicep`
+
+Provisions the governed agent identities, their least-privilege role
+assignments, and the `AGENT_AUDIT` sink (Log Analytics + Sentinel) in one deploy.
+The `agents` parameter is **generated from** `governance/agent-registry.yaml`
+(`python governance/generate_bicep_params.py`) and drift-checked in CI, so the
+deployed identities and roles always match the registry.
+
+```bash
+# 1) (re)generate params from the registry
+python governance/generate_bicep_params.py
+
+# 2) deploy identities + RBAC + audit sink
+az deployment group create -g <rg> -f infra/agent365.bicep \
+  -p @infra/params/agent365.params.json \
+  -p foundryAccountName=<foundry> workspaceName=<la-workspace> \
+     deployStorageAccountName=<sa> keyVaultName=<kv>
+```
+
+After deploy, set `entra.status: provisioned` / `lifecycle: active` in the
+registry, point the hosted-agent container's `APPLICATIONINSIGHTS_CONNECTION_STRING`
+at the workspace so `AGENT_AUDIT` flows into `AgentAudit_CL`, and bind real
+tenant ids per [`governance/tenant/README.md`](../governance/tenant/README.md).
+
 
 ## Architecture at a glance
 
