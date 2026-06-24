@@ -1,0 +1,70 @@
+{
+  "agents": [
+    {
+      "access": {
+        "conditional_access": "ca-agents-baseline",
+        "sensitive_data_groups": {
+          "interview-transcript": [
+            "grp-tva-recruiters"
+          ]
+        }
+      },
+      "app": "hosted-agent",
+      "data": {
+        "employment_decision": false,
+        "label": "Confidential",
+        "personal_data": true,
+        "sensitivity": "confidential",
+        "special_category": false
+      },
+      "display_name": "Lisa \u2014 Voice Live Avatar (HR Screener)",
+      "id": "lisa-voice-avatar",
+      "identity": {
+        "name": "id-tva-lisa",
+        "status": "planned",
+        "type": "user-assigned-managed-identity"
+      },
+      "least_privilege": {
+        "azure_roles": [
+          "Azure AI User",
+          "Cognitive Services User"
+        ],
+        "data_scopes": [
+          "candidate-contact",
+          "interview-schedule",
+          "interview-transcript",
+          "job-requirements"
+        ],
+        "graph_scopes": [
+          "User.Read",
+          "OnlineMeetings.ReadWrite",
+          "Mail.Send",
+          "Calendars.ReadWrite"
+        ]
+      },
+      "lifecycle": "active",
+      "owner": "HR AI Center of Excellence",
+      "posture": {
+        "conditional_access": true,
+        "data_gated": true,
+        "human_oversight": true,
+        "identity_registered": true,
+        "least_privilege": true
+      },
+      "posture_score": 5,
+      "posture_total": 5,
+      "runtime": "foundry-hosted",
+      "sub_agents": []
+    }
+  ],
+  "summary": {
+    "fully_compliant": 1,
+    "gated_agents": 1,
+    "lifecycles": {
+      "active": 1
+    },
+    "personal_data_agents": 1,
+    "total_agents": 1,
+    "total_sub_agents": 0
+  }
+}

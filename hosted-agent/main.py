@@ -21,7 +21,7 @@ from agent_framework.azure import AzureOpenAIChatClient
 from azure.ai.agentserver.agentframework import from_agent_framework
 from azure.identity.aio import DefaultAzureCredential, ManagedIdentityCredential
 from dotenv import load_dotenv
-
+from governance_guard import build_guard_middleware
 from instructions import INSTRUCTIONS
 from tools.job_requirements import get_requirements_for, list_open_positions
 
@@ -113,15 +113,21 @@ async def _build_agent() -> Agent:
         api_version=AZURE_OPENAI_API_VERSION,
         credential=credential,
     )
+    # Wrap the agent with the agentgov governance seam (prompt-injection
+    # screening + DLP redaction + attributable audit on every turn). Returns
+    # None and runs ungoverned if agent_framework/agentgov are unavailable.
+    guard_middleware = build_guard_middleware()
+    middleware = [guard_middleware] if guard_middleware else []
     agent = Agent(
         client,
         name="Lisa_HR_Screener",
         instructions=INSTRUCTIONS,
         tools=[lookup_job_requirements],
+        middleware=middleware,
     )
     logger.info(
-        "Lisa agent built (base_url=%s, model=%s, api_version=%s)",
-        base_url, MODEL_DEPLOYMENT_NAME, AZURE_OPENAI_API_VERSION,
+        "Lisa agent built (base_url=%s, model=%s, api_version=%s, governed=%s)",
+        base_url, MODEL_DEPLOYMENT_NAME, AZURE_OPENAI_API_VERSION, bool(guard_middleware),
     )
     return agent
 

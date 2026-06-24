@@ -1,0 +1,58 @@
+name: python-tests
+
+# Runs the dependency-light Python suites: the agentgov governance runtime, the
+# governance tooling, and the per-app governance adapters (browser-fallback +
+# hosted-agent). Kept to PyYAML only (no Voice Live / agent-framework / Azure
+# SDKs) so it stays fast and reliable. The hosted-agent middleware behaviour
+# tests self-skip when agent_framework is absent.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "agentgov/**"
+      - "governance/**"
+      - "browser-fallback/governance_guard.py"
+      - "browser-fallback/tests/**"
+      - "hosted-agent/governance_guard.py"
+      - "hosted-agent/tests/**"
+      - ".github/workflows/python-tests.yml"
+  pull_request:
+    paths:
+      - "agentgov/**"
+      - "governance/**"
+      - "browser-fallback/governance_guard.py"
+      - "browser-fallback/tests/**"
+      - "hosted-agent/governance_guard.py"
+      - "hosted-agent/tests/**"
+      - ".github/workflows/python-tests.yml"
+  workflow_dispatch:
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: agentgov runtime tests
+        run: python -m unittest discover -s agentgov/tests -p "test_*.py" -v
+
+      - name: governance tooling tests
+        run: python -m unittest discover -s governance/tests -p "test_*.py" -v
+
+      - name: browser-fallback governance adapter tests
+        run: python browser-fallback/tests/test_governance_guard.py
+
+      - name: hosted-agent governance adapter tests
+        run: python hosted-agent/tests/test_governance_guard.py

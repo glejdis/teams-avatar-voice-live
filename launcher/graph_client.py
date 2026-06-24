@@ -64,6 +64,13 @@ _cached_token: str | None = None
 _token_expires: float = 0.0
 
 # Persistent MSAL token cache for delegated flow.
+#
+# Least privilege (see governance/agent-registry.yaml ->
+# lisa-voice-avatar.least_privilege.graph_scopes): the avatar acts On-Behalf-Of
+# the signed-in organiser with these *delegated* scopes only — never app-only
+# `.default`. The governance validator rejects `.default` / wildcard scopes in
+# the registry, so this list is the enforced least-privilege contract.
+# (Calendars.ReadWrite / Calendars.Read are requested on demand below.)
 _DELEGATED_SCOPES = ["OnlineMeetings.ReadWrite", "Mail.Send", "User.Read"]
 _TOKEN_CACHE_PATH = pathlib.Path.home() / ".teams_avatar_graph_token_cache.bin"
 _msal_app: msal.PublicClientApplication | None = None
@@ -231,6 +238,12 @@ def _get_token() -> str:
         data={
             "client_id": os.environ["GRAPH_CLIENT_ID"],
             "client_secret": os.environ["GRAPH_CLIENT_SECRET"],
+            # `.default` is the only scope value the client-credentials grant
+            # accepts; it resolves to whatever *application* permissions are
+            # consented for the app registration. Least privilege is therefore
+            # enforced at the app-registration level — grant ONLY the application
+            # permissions the avatar needs (e.g. Mail.Send) so `.default` cannot
+            # widen the blast radius. Prefer the delegated (OBO) path above.
             "scope": "https://graph.microsoft.com/.default",
             "grant_type": "client_credentials",
         },

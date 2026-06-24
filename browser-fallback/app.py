@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import base64
-from contextlib import suppress
 import json
 import logging
 import os
-from pathlib import Path
-from typing import Any, Optional
-from datetime import datetime, timezone
 import urllib.error
 import urllib.request
+from contextlib import suppress
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Optional
 
+import governance_guard as gov  # runtime agentgov seam (DLP / injection / audit)
 from azure.ai.voicelive.aio import AgentSessionConfig, connect
 from azure.ai.voicelive.aio._patch import ConnectionClosed
 from azure.ai.voicelive.models import (
@@ -34,7 +35,7 @@ from azure.ai.voicelive.models import (
 from azure.core.credentials import AzureKeyCredential
 from azure.identity.aio import AzureCliCredential, DefaultAzureCredential
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -282,7 +283,7 @@ def _build_avatar_config(config: dict[str, Any]) -> AvatarConfig:
     try:
         avatar["output_protocol"] = "webrtc"
     except Exception:
-        setattr(avatar, "output_protocol", "webrtc")
+        avatar.output_protocol = "webrtc"
     return avatar
 
 
@@ -338,6 +339,8 @@ class VoiceSession:
         self.transcript_started_at = _iso_now()
         self.transcript_turns: list[dict[str, str]] = []
         self.persist_transcript = self.is_teams_session and bool(self.candidate_id)
+        # Best-effort identity for the governance audit trail (ACS guest).
+        self.gov_identity = gov.guest_identity(self.candidate_id, self.candidate_name)
 
     async def send(self, payload: dict[str, Any]) -> None:
         try:
@@ -409,6 +412,19 @@ class VoiceSession:
 
     async def send_text(self, text: str) -> None:
         if not self.connection or not text.strip():
+            return
+        # Governance: screen operator/candidate text for prompt-injection before
+        # it reaches the model. Blocked text is audited and never forwarded.
+        allowed, _safe = gov.screen_user_input(
+            text.strip(), self.gov_identity, action="operator.text"
+        )
+        if not allowed:
+            logger.warning("operator text blocked by governance guard (client=%s)", self.client_id)
+            await self.send({
+                "type": "guard_blocked",
+                "scope": "operator_text",
+                "reason": "prompt_injection",
+            })
             return
         await self.record_transcript_turn("user", text.strip())
         await self.connection.conversation.item.create(
@@ -512,6 +528,7 @@ class VoiceSession:
 
             elif etype == ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED:
                 transcript = getattr(event, "transcript", "") or ""
+                gov.audit_user_turn(transcript, self.gov_identity, action="interview.turn")
                 await self.record_transcript_turn("user", transcript)
                 await self.send({
                     "type": "transcript_done",
@@ -541,6 +558,11 @@ class VoiceSession:
 
             elif etype in (ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DONE, getattr(ServerEventType, "RESPONSE_OUTPUT_AUDIO_TRANSCRIPT_DONE", None)):
                 transcript = getattr(event, "transcript", "") or ""
+                # Governance: DLP-scan + audit the avatar response; persist/show
+                # the redacted text (the audio already streamed in real time).
+                transcript = gov.redact_assistant_output(
+                    transcript, self.gov_identity, action="interview.turn"
+                )
                 await self.record_transcript_turn("assistant", transcript)
                 await self.send({"type": "transcript_done", "role": "assistant", "transcript": transcript})
 
@@ -707,7 +729,9 @@ async def acs_token() -> dict[str, str]:
             user, token = client.create_user_and_token(scopes=["voip"])
             expires_on = token.expires_on
         else:
-            from azure.communication.identity.aio import CommunicationIdentityClient as AsyncCommunicationIdentityClient
+            from azure.communication.identity.aio import (
+                CommunicationIdentityClient as AsyncCommunicationIdentityClient,
+            )
 
             credential = _build_credential()
             async with AsyncCommunicationIdentityClient(endpoint, credential) as client:

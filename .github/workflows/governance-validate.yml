@@ -1,0 +1,50 @@
+name: governance-validate
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Enforces the Agent Registry on every change. The review checklist is executed
+# as code, so an agent that drops human oversight, requests an over-broad Graph
+# scope, or influences employment decisions without co-determination cannot
+# merge — and the committed governance inventory can never drift from the
+# registry.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'governance/**'
+      - 'agentgov/**'
+      - '.github/workflows/governance-validate.yml'
+  pull_request:
+    paths:
+      - 'governance/**'
+      - 'agentgov/**'
+      - '.github/workflows/governance-validate.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: python -m pip install --quiet pyyaml
+
+      - name: Validate agent registry
+        run: python governance/validate_registry.py
+
+      - name: Check governance inventory is up to date
+        run: python governance/generate_inventory.py --check
+
+      - name: Run governance tooling tests
+        run: python -m unittest discover -s governance/tests -p "test_*.py" -v
+
+      - name: Run agentgov runtime tests (DLP + injection + audit + entitlements)
+        run: python -m unittest discover -s agentgov/tests -p "test_*.py" -v

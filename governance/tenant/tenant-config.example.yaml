@@ -1,0 +1,22 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Tenant binding — EXAMPLE (Phase 5)
+#
+# Copy to tenant-config.local.yaml and fill in your tenant's real ids. Do NOT
+# commit the filled-in copy. This maps the public placeholders in
+# governance/agent-registry.yaml + dlp-policy.yaml to concrete tenant objects.
+# ─────────────────────────────────────────────────────────────────────────────
+
+tenant_id: "00000000-0000-0000-0000-000000000000"
+
+# Entra ID group placeholder -> real group object id (GUID).
+groups:
+  grp-tva-recruiters: "00000000-0000-0000-0000-000000000000"
+
+# Conditional Access policy placeholder -> real CA policy id.
+conditional_access:
+  ca-agents-baseline: "00000000-0000-0000-0000-000000000000"
+
+# Backing agent identity placeholder -> real identity (client id of the UAMI,
+# or the Entra Agent ID once available).
+identities:
+  id-tva-lisa: "00000000-0000-0000-0000-000000000000"

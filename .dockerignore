@@ -1,0 +1,25 @@
+# Build context for hosted-agent/Dockerfile is the repo root. Keep it lean —
+# the agent image only needs hosted-agent/, agentgov/, and two governance YAMLs.
+.git
+.github
+.venv
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.env
+*.md
+
+# Components that are not part of the hosted-agent image.
+infra
+bot
+browser-fallback
+launcher
+core
+scripts
+my-echobot-repo
+docs
+tests
+governance/inventory
+governance/tests
+agentgov/tests
