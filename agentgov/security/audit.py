@@ -44,6 +44,12 @@ class AuditEvent:
     correlation_id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     def to_dict(self) -> dict[str, Any]:
+        """Flat JSON matching the ``AgentAudit_CL`` table (infra/modules/audit-sink.bicep).
+
+        Flat keys (not nested objects) so Log Analytics derives the columns the
+        Sentinel rule queries — ``agentId_s``, ``userOid_g``, ``dlpVerdict_s``,
+        ``injectionDetected_b``, ``decision_s`` … — instead of a single nested blob.
+        """
         return {
             "event": "agent.audit",
             "timestamp": self.timestamp,
@@ -51,21 +57,15 @@ class AuditEvent:
             "agentId": self.agent_id,
             "action": self.action,
             "direction": self.direction,
-            "user": {
-                "oid": self.user_oid or None,
-                "mail": self.user_mail,
-                "resolved": self.user_resolved,
-            },
+            "userOid": self.user_oid or None,
+            "userMail": self.user_mail,
+            "userResolved": self.user_resolved,
             "dataScope": self.data_scope,
             "classification": self.classification,
-            "dlp": {
-                "verdict": self.dlp_verdict,
-                "findingTypes": list(self.dlp_finding_types),
-            },
-            "defender": {
-                "injectionDetected": self.injection_detected,
-                "signals": list(self.injection_signals),
-            },
+            "dlpVerdict": self.dlp_verdict,
+            "dlpFindingTypes": list(self.dlp_finding_types),
+            "injectionDetected": self.injection_detected,
+            "injectionSignals": list(self.injection_signals),
             "decision": self.decision,
             "blockReason": self.block_reason,
         }

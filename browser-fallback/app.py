@@ -469,6 +469,7 @@ class VoiceSession:
             "positive_signals": [],
         }
         await _persist_interview_transcript(record)
+        gov.audit_transcript_persist(self.gov_identity, exchanges=len(exchanges))
 
     async def interrupt(self) -> None:
         if not self.connection:

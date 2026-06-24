@@ -340,6 +340,32 @@ def _delegated_headers() -> dict[str, str]:
     }
 
 
+def resolve_my_group_ids() -> list[str]:
+    """Resolve the signed-in organiser's Entra group object ids (best-effort).
+
+    Uses the existing delegated MSAL token to call Graph ``/me/memberOf`` via
+    ``agentgov.auth.resolve_group_ids``, so the entitlement gate
+    (``access.sensitive_data_groups`` in the registry) can be fed the recruiter's
+    *real* memberships instead of a hard-coded group. Requests the directory-read
+    scope on demand (next consent) and returns ``[]`` on any failure so callers
+    fall back rather than break.
+    """
+    global _DELEGATED_SCOPES  # noqa: PLW0603
+    if "GroupMember.Read.All" not in _DELEGATED_SCOPES:
+        _DELEGATED_SCOPES = list({*_DELEGATED_SCOPES, "GroupMember.Read.All"})
+    try:
+        from agentgov.auth import resolve_group_ids
+    except Exception:  # noqa: BLE001
+        logger.info("agentgov unavailable; cannot resolve group memberships.", exc_info=True)
+        return []
+    try:
+        token = _get_delegated_token()
+    except Exception:  # noqa: BLE001
+        logger.info("delegated token unavailable; cannot resolve group memberships.", exc_info=True)
+        return []
+    return resolve_group_ids(token)
+
+
 # ── Create Teams meeting ────────────────────────────────────────────────────
 
 
@@ -651,6 +677,20 @@ def send_interview_invite(
         candidate_email,
         subject,
     )
+    # Governance: attributable audit of the outbound candidate communication
+    # (DLP-scanned, non-blocking — the recipient is the data subject).
+    try:
+        from launcher.governance import audit_invite_email
+
+        audit_invite_email(
+            to=candidate_email,
+            subject=subject,
+            body_text=f"{candidate_name} {position} {join_url}",
+            organizer_oid="",
+            organizer_mail=str(organizer),
+        )
+    except Exception:  # noqa: BLE001
+        logger.debug("invite-email governance audit failed", exc_info=True)
     return {"sent": True, "to": candidate_email, "subject": subject}
 
 

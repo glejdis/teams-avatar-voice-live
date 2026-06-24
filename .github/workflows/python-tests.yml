@@ -12,6 +12,9 @@ on:
     paths:
       - "agentgov/**"
       - "governance/**"
+      - "launcher/governance.py"
+      - "launcher/graph_client.py"
+      - "launcher/tests/**"
       - "browser-fallback/governance_guard.py"
       - "browser-fallback/tests/**"
       - "hosted-agent/governance_guard.py"
@@ -21,6 +24,9 @@ on:
     paths:
       - "agentgov/**"
       - "governance/**"
+      - "launcher/governance.py"
+      - "launcher/graph_client.py"
+      - "launcher/tests/**"
       - "browser-fallback/governance_guard.py"
       - "browser-fallback/tests/**"
       - "hosted-agent/governance_guard.py"
@@ -50,6 +56,9 @@ jobs:
 
       - name: governance tooling tests
         run: python -m unittest discover -s governance/tests -p "test_*.py" -v
+
+      - name: launcher governance tests
+        run: python -m unittest discover -s launcher/tests -p "test_*.py" -v
 
       - name: browser-fallback governance adapter tests
         run: python browser-fallback/tests/test_governance_guard.py
