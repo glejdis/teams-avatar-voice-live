@@ -1,0 +1,25 @@
+{
+  "$schema": "https://aka.ms/ConditionalAccessPolicySchema",
+  "_comment": "Conditional Access for the WORKLOAD IDENTITY backing the avatar (the agent service principal). Referenced by governance/agent-registry.yaml access.conditional_access = 'ca-agents-baseline'. Ship as report-only first, then enforce. Replace the includeServicePrincipals object id with the agent identity service principal (from infra/modules/agent-identities.bicep / id-tva-lisa) and the namedLocation id with your trusted network locations.",
+  "displayName": "CA-Agents-Baseline (avatar workload identity)",
+  "state": "enabledForReportingButNotEnforced",
+  "conditions": {
+    "applications": {
+      "includeApplications": ["All"]
+    },
+    "clientApplications": {
+      "includeServicePrincipals": [
+        "<sp-object-id:id-tva-lisa>"
+      ],
+      "excludeServicePrincipals": []
+    },
+    "locations": {
+      "includeLocations": ["All"],
+      "excludeLocations": ["<named-location-id:trusted-networks>"]
+    }
+  },
+  "grantControls": {
+    "operator": "OR",
+    "builtInControls": ["block"]
+  }
+}
