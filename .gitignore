@@ -222,4 +222,6 @@ browser-fallback/data/
 
 # Tenant binding — filled-in copy with real Entra group / CA ids (never commit)
 governance/tenant/*.local.*
+# Resolved deploy artifacts emitted by governance/apply_tenant_config.py
+governance/tenant/out/
 

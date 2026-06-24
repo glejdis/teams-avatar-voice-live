@@ -72,9 +72,26 @@ to a real person and a registered agent, never the app identity.
 pip install pyyaml
 python governance/validate_registry.py
 python governance/generate_inventory.py          # regenerate the dashboard
+python governance/generate_bicep_params.py        # regenerate infra params from the registry
 python -m unittest discover -s governance/tests -p "test_*.py" -v
 python -m unittest discover -s agentgov/tests   -p "test_*.py" -v
 ```
+
+## Provisioning the agent identity (Phase 5)
+
+The registry drives the infrastructure. `generate_bicep_params.py` emits
+`infra/params/agent365.params.json` (drift-checked in CI), which
+[`infra/agent365.bicep`](../infra/agent365.bicep) consumes to provision:
+
+- one **User-Assigned Managed Identity** per agent (`id-tva-lisa`),
+- its **least-privilege** Azure role assignments (only the registry
+  `azure_roles`), and
+- the **`AGENT_AUDIT` sink** — a Log Analytics `AgentAudit_CL` table + a Sentinel
+  rule that alerts on blocked / injection / DLP-block decisions.
+
+Bind real tenant ids (Entra group GUIDs, CA policy id, identity) with
+`apply_tenant_config.py` — see [`tenant/README.md`](tenant/README.md). After
+deploy, set `entra.status: provisioned` in the registry.
 
 ## Lifecycle: request → register → provision → retire
 
