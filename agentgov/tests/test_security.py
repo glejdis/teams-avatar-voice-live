@@ -139,12 +139,40 @@ class InjectionTests(unittest.TestCase):
 
 class AuditEventTests(unittest.TestCase):
     def test_event_is_keyed_by_user_agent_action(self):
-        event = AuditEvent(agent_id="hr-support-orchestrator", action="chat.message", user_oid="oid-9")
+        event = AuditEvent(agent_id="lisa-voice-avatar", action="interview.turn", user_oid="oid-9")
         payload = json.loads(event.to_json())
-        self.assertEqual(payload["agentId"], "hr-support-orchestrator")
-        self.assertEqual(payload["action"], "chat.message")
-        self.assertEqual(payload["user"]["oid"], "oid-9")
+        self.assertEqual(payload["agentId"], "lisa-voice-avatar")
+        self.assertEqual(payload["action"], "interview.turn")
+        self.assertEqual(payload["userOid"], "oid-9")
         self.assertTrue(payload["correlationId"])
+
+    def test_to_dict_is_flat_for_agentaudit_cl_columns(self):
+        """The flat keys map 1:1 to infra/modules/audit-sink.bicep AgentAudit_CL."""
+        event = AuditEvent(
+            agent_id="lisa-voice-avatar",
+            action="interview.turn",
+            user_oid="oid-1",
+            user_mail="r@contoso.example",
+            dlp_verdict="block",
+            dlp_finding_types=("iban",),
+            injection_detected=True,
+            decision="blocked",
+            block_reason="entitlement",
+        )
+        payload = json.loads(event.to_json())
+        for key in (
+            "agentId", "action", "direction", "userOid", "userMail", "classification",
+            "dlpVerdict", "dlpFindingTypes", "injectionDetected", "decision",
+            "blockReason", "correlationId",
+        ):
+            self.assertIn(key, payload)
+        # No nested objects — these would not map onto the flat *_s/_g/_b columns.
+        self.assertNotIn("user", payload)
+        self.assertNotIn("dlp", payload)
+        self.assertNotIn("defender", payload)
+        self.assertEqual(payload["dlpVerdict"], "block")
+        self.assertIs(payload["injectionDetected"], True)
+        self.assertEqual(payload["blockReason"], "entitlement")
 
 
 class GuardPipelineTests(unittest.TestCase):

@@ -10,6 +10,7 @@ from .entitlements import (
     load_policy_from_registry,
     load_policy_from_registry_file,
 )
+from .graph_groups import resolve_group_ids
 
 __all__ = [
     "EntitlementChecker",
@@ -18,4 +19,5 @@ __all__ = [
     "extract_group_ids",
     "load_policy_from_registry",
     "load_policy_from_registry_file",
+    "resolve_group_ids",
 ]

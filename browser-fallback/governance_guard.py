@@ -122,3 +122,31 @@ def redact_assistant_output(text: str, identity: Any, *, action: str = "intervie
     except Exception:  # noqa: BLE001
         logger.warning("redact_assistant_output failed; passing through.", exc_info=True)
         return text
+
+
+def audit_transcript_persist(identity: Any, *, exchanges: int, action: str = "transcript.persist") -> None:
+    """Emit an attributable audit event when an interview transcript is stored.
+
+    Marks the stored-artifact surface in the audit trail (the per-turn content is
+    already DLP-screened as it streams). No-ops if the guard is disabled.
+    """
+    if _GUARD is None:
+        return
+    try:
+        from agentgov.security.audit import AuditEvent, emit
+
+        emit(
+            AuditEvent(
+                agent_id=AGENT_ID,
+                action=action,
+                direction="output",
+                user_oid=getattr(identity, "oid", "") or "",
+                user_mail=getattr(identity, "mail", None),
+                user_resolved=bool(getattr(identity, "resolved", False)),
+                classification=_GUARD.dlp_policy.label_for(_GUARD.sensitivity),
+                dlp_finding_types=(f"exchanges:{exchanges}",),
+                decision="allowed",
+            )
+        )
+    except Exception:  # noqa: BLE001
+        logger.debug("audit_transcript_persist failed", exc_info=True)

@@ -60,5 +60,21 @@ class RedactOutputTests(unittest.TestCase):
         self.assertEqual(out, "Let's move to the next question.")
 
 
+class TranscriptPersistAuditTests(unittest.TestCase):
+    def setUp(self):
+        self.ident = gov.guest_identity("CAND-1", "Anna")
+
+    def test_persist_emits_attributable_audit(self):
+        with self.assertLogs("agentgov.security.audit", level="INFO") as cm:
+            gov.audit_transcript_persist(self.ident, exchanges=4)
+        line = "\n".join(cm.output)
+        self.assertIn("AGENT_AUDIT", line)
+        self.assertIn("transcript.persist", line)
+        self.assertIn("exchanges:4", line)
+
+    def test_persist_audit_does_not_raise(self):
+        gov.audit_transcript_persist(self.ident, exchanges=0)
+
+
 if __name__ == "__main__":
     unittest.main()
