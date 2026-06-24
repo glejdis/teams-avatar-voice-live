@@ -106,12 +106,32 @@ You want exactly **one** operator tab open per demo.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
+| **Meeting created + invite emailed, but no avatar ever joins** (bot log shows zero join requests) | `TEAMS_JOIN_MODE=browser_webrtc` → the dispatcher records the invite but **never asks the bot to join**; it expects a browser/WebRTC client that wasn't running | Use `TEAMS_JOIN_MODE=graph_bot` for hands-off joining (see below). The dispatcher now logs a loud `AVATAR JOIN DEFERRED TO BROWSER` warning + an `avatar.join.deferred` AGENT_AUDIT event for exactly this case |
 | `python -m launcher schedule` exits with `Tenant provided in token does not match resource` | Local Azure CLI is signed into the wrong tenant | `az login --tenant <tenant-id>` |
 | Email never arrives, no error | `GRAPH_CLIENT_SECRET` expired | Rotate in Key Vault → re-run `secret-rotation.yml` |
 | `Avatar bot endpoint unreachable` | VMSS deallocated, or App Gateway probe failing | `Startup` script; then `az vmss list-instance-public-ips` to confirm health |
 | Teams shows two avatars in lobby | Duplicate operator tab, or stale Python on port 3000 | Run the pre-flight cleanup block; restart on port 3000 only |
 | Operator log says `getMediaStream is unavailable` | Patched ACS browser SDK bundle missing | `cd browser-fallback/rebuild-acs && python build_acs.py --version 1.42.1` |
 | Lisa joins but no audio out | Sidecar can't reach Voice Live | Check `AGENT_AZURE_OPENAI_API_VERSION` matches your Foundry deployment |
+
+### Which join mode? (`TEAMS_JOIN_MODE`)
+
+`launcher.bot_dispatcher.dispatch` forks on the mode and reports `avatar_will_join`
+in its result; whenever no avatar will actually enter, it logs a loud warning and
+emits an `avatar.join.<outcome>` AGENT_AUDIT event (queryable in `AgentAudit_CL`
+by `action_s`), so "invite emailed, nobody joined" is never silent.
+
+| | `graph_bot` (recommended) | `browser_webrtc` |
+|---|---|---|
+| **Who joins** | The VMSS Lisa bot dials in automatically (`POST BOT_JOIN_ENDPOINT/joinCall`) | A browser/WebRTC client — only if an operator page or auto-join tab is **live** |
+| **Hands-off?** | ✅ yes | ❌ no — needs a live browser |
+| **Audit on dispatch** | `avatar.join.requested` (or `avatar.join.failed`) | `avatar.join.deferred` |
+| **Use for** | Production, scheduled/unattended interviews | Local laptop demos |
+
+For production, set `TEAMS_JOIN_MODE=graph_bot`, `BOT_JOIN_ENDPOINT=…`, and
+`BOT_JOIN_REQUIRED=true` so a bot that can't join **fails loudly** instead of
+emailing a link no avatar joins.
+
 
 ## 5. Logs
 
