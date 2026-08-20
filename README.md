@@ -1,18 +1,12 @@
-# Teams Avatar Voice Live
+<div align="center">
 
-> ### 🙏 Built on open source — original repo: **[`glejdis/teams-avatar-bot`](https://github.com/glejdis/teams-avatar-bot)**
->
-> The `graph_bot` transport is derived from the Microsoft Graph **EchoBot** community sample
-> ([microsoft-graph-comms-samples](https://github.com/microsoftgraph/microsoft-graph-comms-samples/tree/master/Samples/PublicSamples/EchoBot))
-> by [@bcage29](https://github.com/bcage29) &amp; [@brwilkinson](https://github.com/brwilkinson), MIT-licensed, and
-> vendored here as the [`bot/`](#repo-layout) submodule. Full credits in [Acknowledgements](#acknowledgements).
+# 🎙️ Teams Avatar Voice Live
 
-> A platform for putting **any** real-time voice AI agent into a Microsoft Teams meeting
-> as a governed **video avatar**, powered by **Azure Voice Live** — and it sends the
-> invite email itself. The agent's entire personality is **one Markdown file**, so it can
-> be *any* role: support, sales (SDR), scheduling, tutoring, interviewing. It ships with
-> **Lisa, an HR screener**, as a worked example — but Lisa is just the demo persona,
-> **not the product**.
+### Put _any_ real-time voice AI agent into a Microsoft Teams meeting — as a governed, on-brand **video avatar**
+
+Powered by **Azure Voice Live**&nbsp; ·&nbsp; persona = one Markdown file&nbsp; ·&nbsp; governance built in
+
+<br />
 
 [![CI](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/python-tests.yml/badge.svg)](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/python-tests.yml)
 [![Governance](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/governance-validate.yml/badge.svg)](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/governance-validate.yml)
@@ -24,6 +18,24 @@
 ![Microsoft Teams](https://img.shields.io/badge/Microsoft-Teams-6264A7?logo=microsoftteams&logoColor=white)
 ![Azure AI Foundry](https://img.shields.io/badge/Azure%20AI-Foundry-0078D4?logo=microsoftazure&logoColor=white)
 ![Responsible AI](https://img.shields.io/badge/Responsible%20AI-governed-2ea44f)
+
+<br />
+
+[**Quickstart**](#quickstart)&nbsp; ·&nbsp; [**Architecture**](#what-you-get)&nbsp; ·&nbsp; [**Two transports**](#two-transports--both-shipped-your-choice)&nbsp; ·&nbsp; [**Governance**](#governance--the-avatar-is-a-first-class-governed-agent-identity)&nbsp; ·&nbsp; [**Personas**](#personas--lisa-is-just-the-example)
+
+</div>
+
+---
+
+> 🙏 **Built on open source — original repo: [`glejdis/teams-avatar-bot`](https://github.com/glejdis/teams-avatar-bot).**
+> The `graph_bot` transport is derived from the Microsoft Graph **EchoBot** community sample
+> ([microsoft-graph-comms-samples](https://github.com/microsoftgraph/microsoft-graph-comms-samples/tree/master/Samples/PublicSamples/EchoBot))
+> by [@bcage29](https://github.com/bcage29) & [@brwilkinson](https://github.com/brwilkinson), MIT-licensed, and
+> vendored here as the [`bot/`](#repo-layout) submodule. Full credits in [Acknowledgements](#acknowledgements).
+
+> **ℹ️ It's a platform, not an HR app.** It ships with **Lisa, an HR screener** as the worked
+> example persona — swap her for support, sales (SDR), scheduling, or tutoring by editing one
+> Markdown file. Lisa is the demo, **not the product**.
 
 ---
 
