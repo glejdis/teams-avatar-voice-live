@@ -7,10 +7,12 @@
 > by [@bcage29](https://github.com/bcage29) &amp; [@brwilkinson](https://github.com/brwilkinson), MIT-licensed, and
 > vendored here as the [`bot/`](#repo-layout) submodule. Full credits in [Acknowledgements](#acknowledgements).
 
-> An AI agent that joins a Microsoft Teams meeting as a video avatar driven by
-> **Azure Voice Live**, and sends the invite email itself. Ships a worked
-> example (Lisa, an HR screener) with the persona externalised to a Markdown
-> file — swap her for any role in seconds.
+> A platform for putting **any** real-time voice AI agent into a Microsoft Teams meeting
+> as a governed **video avatar**, powered by **Azure Voice Live** — and it sends the
+> invite email itself. The agent's entire personality is **one Markdown file**, so it can
+> be *any* role: support, sales (SDR), scheduling, tutoring, interviewing. It ships with
+> **Lisa, an HR screener**, as a worked example — but Lisa is just the demo persona,
+> **not the product**.
 
 [![CI](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/python-tests.yml/badge.svg)](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/python-tests.yml)
 [![Governance](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/governance-validate.yml/badge.svg)](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/governance-validate.yml)
@@ -157,9 +159,10 @@ prompt-engineering loop.
 
 ## Personas — Lisa is just the example
 
-The shipped persona is **Lisa**, an HR screening assistant — the same one
-this codebase was originally extracted from. Her full prompt lives in a
-single Markdown file:
+**This is a general-purpose platform, not an HR tool.** The shipped persona is
+**Lisa**, an HR screening assistant — the same one this codebase was originally
+extracted from — but she is only a demonstration of the pattern. Her full prompt
+lives in a single Markdown file:
 
 ```
 hosted-agent/personas/lisa.md
