@@ -25,6 +25,44 @@
 
 ---
 
+## Why this repo?
+
+Most "AI agent" projects hand you a chat box. **This one joins the meeting.** 🧑‍💻 ➡️ 🧑‍💼
+
+It turns a real-time voice agent into a *first-class Teams participant* — it dials into
+the call, **talks and listens live** over **Azure Voice Live** (interruptible
+speech-to-speech, not brittle STT → LLM → TTS glue), renders a **video avatar**, and
+replies in the meeting chat — with **every turn governed and audited**. And it's
+deliberately built to be pulled apart and reused.
+
+Why it's worth your time, technically:
+
+- 🎙️ **Real-time, interruptible voice.** Barge-in and natural turn-taking come straight
+  from Voice Live — a live conversation, not a walkie-talkie.
+- 🧩 **Two transports, one env flag.** `TEAMS_JOIN_MODE=graph_bot` (C# Graph calling bot on
+  Azure VMSS, production-grade) **or** `browser_webrtc` (ACS WebRTC — a **5-minute local
+  demo: zero infra, no submodule**). Same agent brain; only *how it joins* changes.
+- 📝 **Persona = one Markdown file.** Role, tone, and guardrails live in
+  [`hosted-agent/personas/*.md`](hosted-agent/personas) and are loaded *verbatim* — no
+  templating, no redeploy. Ship [`lisa.md`](hosted-agent/personas/lisa.md) (an HR
+  screener), or drop in [`generic.md`](hosted-agent/personas/generic.md) and make it a
+  support agent, SDR, or tutor by editing text.
+- 🛡️ **Governance is code you can `grep`, not a policy PDF.** A CI gate
+  ([`governance/validate_registry.py`](governance/validate_registry.py)) validates every
+  agent against [`agent-registry.yaml`](governance/agent-registry.yaml) *before* merge; a
+  runtime guard ([`agentgov/security/`](agentgov/security)) layers **PII/DLP redaction**,
+  **prompt-injection screening**, **Entra-group entitlement checks**, and a **per-turn
+  audit event** onto the live conversation.
+- 🧠 **One brain, two front doors.** A single Azure AI Foundry hosted agent serves *both*
+  the voice and the chat path — consistent answers, one thing to reason about.
+- 🏗️ **Production-shaped, not a notebook.** Bicep IaC, VMSS, Key Vault, OIDC-based GitHub
+  Actions deploys, scheduled secret rotation, and App Insights / Sentinel telemetry all
+  ship in the box.
+
+**Steal any layer:** the Voice Live wiring, the persona loader, or — the real gem — the
+**agent-governance seam** (registry → CI gate → runtime guard → audit) that drops into
+*any* agent stack, Teams or not.
+
 ## What you get
 
 ![Interview Call Architecture](docs/diagrams/interview-call-architecture.svg)
