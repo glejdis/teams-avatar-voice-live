@@ -1,9 +1,11 @@
 # Teams Avatar Voice Live
 
-> _🙏 The `graph_bot` transport (the [`bot/`](#repo-layout) submodule) is built on the open-source
-> [Microsoft Graph **EchoBot** sample](https://github.com/microsoftgraph/microsoft-graph-comms-samples/tree/master/Samples/PublicSamples/EchoBot)
-> by [@bcage29](https://github.com/bcage29) and [@brwilkinson](https://github.com/brwilkinson), MIT-licensed.
-> Full credits in [Acknowledgements](#acknowledgements)._
+> ### 🙏 Built on open source — original repo: **[`glejdis/teams-avatar-bot`](https://github.com/glejdis/teams-avatar-bot)**
+>
+> The `graph_bot` transport is derived from the Microsoft Graph **EchoBot** community sample
+> ([microsoft-graph-comms-samples](https://github.com/microsoftgraph/microsoft-graph-comms-samples/tree/master/Samples/PublicSamples/EchoBot))
+> by [@bcage29](https://github.com/bcage29) &amp; [@brwilkinson](https://github.com/brwilkinson), MIT-licensed, and
+> vendored here as the [`bot/`](#repo-layout) submodule. Full credits in [Acknowledgements](#acknowledgements).
 
 > An AI agent that joins a Microsoft Teams meeting as a video avatar driven by
 > **Azure Voice Live**, and sends the invite email itself. Ships a worked
@@ -195,9 +197,10 @@ generic persona, please send it in.
 The **`graph_bot`** transport stands on prior open-source work:
 
 - **[Microsoft Graph EchoBot sample](https://github.com/microsoftgraph/microsoft-graph-comms-samples/tree/master/Samples/PublicSamples/EchoBot)**
-  — the C# Teams calling-bot foundation vendored as the [`bot/`](#repo-layout) submodule, by
-  [@bcage29](https://github.com/bcage29) (Brennen Cage) and [@brwilkinson](https://github.com/brwilkinson)
-  (Bruce Wilkinson). MIT-licensed; the original copyright and licence are preserved in the submodule.
+  — the C# Teams calling-bot foundation, by [@bcage29](https://github.com/bcage29) (Brennen Cage) and
+  [@brwilkinson](https://github.com/brwilkinson) (Bruce Wilkinson). Vendored here as the [`bot/`](#repo-layout)
+  submodule — original repo: **[`glejdis/teams-avatar-bot`](https://github.com/glejdis/teams-avatar-bot)**.
+  MIT-licensed; the original copyright and licence are preserved in the submodule.
 - **[Azure Deployment Framework (ADF)](https://github.com/brwilkinson/AzureDeploymentFramework)** by
   [@brwilkinson](https://github.com/brwilkinson) — the VMSS/DSC deployment tooling the EchoBot sample builds on.
 
