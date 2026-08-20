@@ -99,9 +99,10 @@ az deployment group create `
      `AZURE_SUBSCRIPTION_ID`, `VMSS_ADMIN_PASSWORD`. `SUBMODULE_TOKEN`
      is **optional** — only set it if you've forked `bot/` to a private
      repo. The default `bot/` submodule (`glejdis/teams-avatar-bot`) is
-     currently **private**, so keep `SUBMODULE_TOKEN` set. If you make your
-     `bot/` fork public, you can instead edit `agent-deploy.yml` to set
-     `submodules: true` and drop the `SUBMODULE_TOKEN` checkout step.
+     **public**, so you can leave `SUBMODULE_TOKEN` unset — edit
+     `agent-deploy.yml` to set `submodules: true` and drop the
+     `SUBMODULE_TOKEN` checkout step. Only set `SUBMODULE_TOKEN` if you fork
+     `bot/` to a private repo.
    - **Variables:** `AZURE_RESOURCE_GROUP`, `FOUNDRY_ACCOUNT_NAME`,
      `FOUNDRY_PROJECT_NAME`, `INFRA_DEPLOYMENT_NAME` (optional, defaults
      to `main`).
