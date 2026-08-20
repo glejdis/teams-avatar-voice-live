@@ -1,5 +1,10 @@
 # Teams Avatar Voice Live
 
+> _🙏 The `graph_bot` transport (the [`bot/`](#repo-layout) submodule) is built on the open-source
+> [Microsoft Graph **EchoBot** sample](https://github.com/microsoftgraph/microsoft-graph-comms-samples/tree/master/Samples/PublicSamples/EchoBot)
+> by [@bcage29](https://github.com/bcage29) and [@brwilkinson](https://github.com/brwilkinson), MIT-licensed.
+> Full credits in [Acknowledgements](#acknowledgements)._
+
 > An AI agent that joins a Microsoft Teams meeting as a video avatar driven by
 > **Azure Voice Live**, and sends the invite email itself. Ships a worked
 > example (Lisa, an HR screener) with the persona externalised to a Markdown
@@ -184,6 +189,19 @@ the runtime API, and the request → register → provision → retire lifecycle
 PRs welcome. The persona content in `hosted-agent/personas/lisa.md` is
 deliberately verbose so it works out of the box — if you write a tighter
 generic persona, please send it in.
+
+## Acknowledgements
+
+The **`graph_bot`** transport stands on prior open-source work:
+
+- **[Microsoft Graph EchoBot sample](https://github.com/microsoftgraph/microsoft-graph-comms-samples/tree/master/Samples/PublicSamples/EchoBot)**
+  — the C# Teams calling-bot foundation vendored as the [`bot/`](#repo-layout) submodule, by
+  [@bcage29](https://github.com/bcage29) (Brennen Cage) and [@brwilkinson](https://github.com/brwilkinson)
+  (Bruce Wilkinson). MIT-licensed; the original copyright and licence are preserved in the submodule.
+- **[Azure Deployment Framework (ADF)](https://github.com/brwilkinson/AzureDeploymentFramework)** by
+  [@brwilkinson](https://github.com/brwilkinson) — the VMSS/DSC deployment tooling the EchoBot sample builds on.
+
+These are community samples, **not official Microsoft products**.
 
 ## License
 
