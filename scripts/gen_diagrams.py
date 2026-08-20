@@ -285,7 +285,7 @@ def excalidraw() -> dict:
     return {
         "type": "excalidraw",
         "version": 2,
-        "source": "https://github.com/glejdis/teams_avatar_voice_live",
+        "source": "https://github.com/glejdis/teams-avatar-voice-live",
         "elements": elements,
         "appState": {"viewBackgroundColor": "#ffffff", "gridSize": 20},
         "files": {},

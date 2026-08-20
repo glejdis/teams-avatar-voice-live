@@ -27,8 +27,8 @@ Prose walkthrough + request/response sequences: [`docs/architecture.md`](docs/ar
 ## Quickstart
 
 ```bash
-git clone --recursive https://github.com/glejdis/teams_avatar_voice_live.git
-cd teams_avatar_voice_live
+git clone --recursive https://github.com/glejdis/teams-avatar-voice-live.git
+cd teams-avatar-voice-live
 python -m venv .venv && . .venv/bin/activate    # or .\.venv\Scripts\Activate.ps1 on Windows
 pip install -e .[web]                            # core + launcher; web extras optional
 
@@ -56,8 +56,8 @@ Graph app, OIDC, or VMSS? The browser-fallback path needs only an ACS
 connection string and a Voice Live endpoint:
 
 ```bash
-git clone https://github.com/glejdis/teams_avatar_voice_live.git
-cd teams_avatar_voice_live/browser-fallback
+git clone https://github.com/glejdis/teams-avatar-voice-live.git
+cd teams-avatar-voice-live/browser-fallback
 
 python -m venv .venv && . .venv/bin/activate    # or .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -138,7 +138,7 @@ teams_avatar_voice_live/
 │   ├── personas/      # editable Markdown persona files
 │   └── tools/         # agent function tools (example: job_requirements)
 │
-├── bot/               # git submodule → glejdis/my-echobot-repo (C# Graph bot + sidecar)
+├── bot/               # git submodule → glejdis/teams-avatar-bot (C# Graph bot + sidecar)
 ├── browser-fallback/  # ACS browser WebRTC operator UI (local dev)
 ├── agentgov/          # runtime governance seam (DLP · prompt-injection · audit · entitlement)
 ├── governance/        # agent registry + validator + DLP policy + inventory dashboard

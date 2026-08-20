@@ -35,7 +35,7 @@ You need **all** of the following in the target Azure tenant:
     -SubscriptionId <SUBSCRIPTION_ID> `
     -ResourceGroup <RESOURCE_GROUP> `
     -GitHubOrg <YOUR_GH_ORG> `
-    -GitHubRepo teams_avatar_voice_live
+    -GitHubRepo teams-avatar-voice-live
 ```
 
 This creates the AAD app + federated credential and prints the three GitHub

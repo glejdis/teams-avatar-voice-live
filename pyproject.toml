@@ -49,8 +49,8 @@ dev = [
 tva-launcher = "launcher.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/glejdis/teams_avatar_voice_live"
-Issues = "https://github.com/glejdis/teams_avatar_voice_live/issues"
+Homepage = "https://github.com/glejdis/teams-avatar-voice-live"
+Issues = "https://github.com/glejdis/teams-avatar-voice-live/issues"
 
 [build-system]
 requires = ["setuptools>=68"]

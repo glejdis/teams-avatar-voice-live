@@ -84,7 +84,7 @@ in `voice-live-config.json`.
 Deployed via `agent-deploy.yml` to Azure Container Apps / Foundry, image stored
 in your ACR.
 
-### `bot/` (git submodule → `glejdis/my-echobot-repo`)
+### `bot/` (git submodule → `glejdis/teams-avatar-bot`)
 The C# Microsoft Graph calling bot + Python sidecar that runs on the **VMSS**
 transport. The bot accepts `POST /joinCall {joinURL, displayName}` and joins
 the meeting as a regular Teams participant. The sidecar bridges Voice Live
