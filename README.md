@@ -12,7 +12,16 @@
 > example (Lisa, an HR screener) with the persona externalised to a Markdown
 > file — swap her for any role in seconds.
 
-**License:** MIT  ·  **Python:** 3.11+  ·  **Status:** v0.1.3
+[![CI](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/python-tests.yml/badge.svg)](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/python-tests.yml)
+[![Governance](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/governance-validate.yml/badge.svg)](https://github.com/glejdis/teams-avatar-voice-live/actions/workflows/governance-validate.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![Status](https://img.shields.io/badge/status-v0.1.3-blueviolet)
+
+![Azure Voice Live](https://img.shields.io/badge/Azure-Voice%20Live-0078D4?logo=microsoftazure&logoColor=white)
+![Microsoft Teams](https://img.shields.io/badge/Microsoft-Teams-6264A7?logo=microsoftteams&logoColor=white)
+![Azure AI Foundry](https://img.shields.io/badge/Azure%20AI-Foundry-0078D4?logo=microsoftazure&logoColor=white)
+![Responsible AI](https://img.shields.io/badge/Responsible%20AI-governed-2ea44f)
 
 ---
 
