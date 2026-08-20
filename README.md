@@ -250,9 +250,17 @@ the runtime API, and the request → register → provision → retire lifecycle
 
 ## Contributing
 
-PRs welcome. The persona content in `hosted-agent/personas/lisa.md` is
-deliberately verbose so it works out of the box — if you write a tighter
-generic persona, please send it in.
+PRs welcome! 🎉 See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the dev setup,
+the checks CI runs (`ruff`, `pytest`, governance validation), and how to add a
+persona. Please also read the **[Code of Conduct](CODE_OF_CONDUCT.md)**.
+
+The fastest, highest-value contribution is a **new persona** — a persona is one
+Markdown file. The content in `hosted-agent/personas/lisa.md` is deliberately
+verbose so it works out of the box; if you write a tighter generic persona,
+please send it in.
+
+- 🔒 **Found a security issue?** Please follow **[SECURITY.md](SECURITY.md)** —
+  don't open a public issue.
 
 ## Acknowledgements
 
@@ -267,6 +275,15 @@ The **`graph_bot`** transport stands on prior open-source work:
   [@brwilkinson](https://github.com/brwilkinson) — the VMSS/DSC deployment tooling the EchoBot sample builds on.
 
 These are community samples, **not official Microsoft products**.
+
+## Disclaimer
+
+This is an independent, personal project — **not an official Microsoft product**
+and not affiliated with or endorsed by Microsoft. It *uses* Azure, Microsoft
+Teams, Microsoft Graph, and Azure AI Foundry via their public APIs. All
+Microsoft names and logos are trademarks of Microsoft Corporation. See
+**[DISCLAIMER.md](DISCLAIMER.md)** for details, and always obtain consent before
+an AI agent joins, records, or transcribes a meeting.
 
 ## License
 
