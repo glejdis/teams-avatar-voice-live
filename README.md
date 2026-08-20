@@ -81,9 +81,6 @@ Why it's worth your time, technically:
 
 ![Interview Call Architecture](docs/diagrams/interview-call-architecture.svg)
 
-> **Editable source:** [`interview-call-architecture.drawio`](docs/diagrams/interview-call-architecture.drawio)
-> (open at [app.diagrams.net](https://app.diagrams.net)).
-
 ![End-to-end architecture](docs/diagrams/architecture_view.png)
 
 > **Editable source:** [`architecture.drawio`](docs/diagrams/architecture.drawio)
