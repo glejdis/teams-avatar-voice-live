@@ -276,6 +276,11 @@ The **`graph_bot`** transport stands on prior open-source work:
 
 These are community samples, **not official Microsoft products**.
 
+### 🙌 Special thanks
+
+- **[@LaetitiaMa1410](https://github.com/LaetitiaMa1410)** — for her invaluable
+  support and collaboration in building this project up. Thank you! 💜
+
 ## Disclaimer
 
 This is an independent, personal project — **not an official Microsoft product**
