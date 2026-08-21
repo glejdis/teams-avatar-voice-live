@@ -1,9 +1,9 @@
 # `governance/` — Agent governance for `teams-avatar-voice-live`
 
 Makes the avatar a **first-class, governed agent identity** and enforces the
-controls *as code* on every change and every turn. Ported from the Agent 365
-governance program in the Aldi HR multi-agent system and adapted to this repo's
-single agent (Lisa, the Voice Live avatar).
+controls *as code* on every change and every turn. Ported from a production
+Agent 365 governance program and adapted to this repo's single agent (Lisa, the
+Voice Live avatar).
 
 Three things this gives you:
 

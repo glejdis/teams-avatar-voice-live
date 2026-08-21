@@ -28,7 +28,7 @@ def _valid_agent() -> dict:
             "sensitivity": "confidential",
         },
         "entra": {
-            "identity_name": "id-aldihr-sample",
+            "identity_name": "id-hr-sample",
             "identity_type": "user-assigned-managed-identity",
             "status": "planned",
         },
@@ -77,7 +77,7 @@ class StructuralRuleTests(unittest.TestCase):
 
     def test_duplicate_id_fails(self):
         a, b = _valid_agent(), _valid_agent()
-        b["entra"]["identity_name"] = "id-aldihr-other"
+        b["entra"]["identity_name"] = "id-hr-other"
         result = validate_registry(_registry(a, b))
         self.assertTrue(any("duplicate agent id" in e for e in result.errors))
 

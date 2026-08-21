@@ -57,7 +57,7 @@ class Identity:
         self.resolved = resolved
 
 
-RECRUITER = Identity("oid-1", "rec@aldi.example", True)
+RECRUITER = Identity("oid-1", "rec@contoso.example", True)
 
 
 class PolicyTests(unittest.TestCase):
@@ -83,7 +83,7 @@ class PolicyTests(unittest.TestCase):
 class DlpEngineTests(unittest.TestCase):
     def test_detects_email_and_iban(self):
         engine = DlpEngine(_policy())
-        findings = engine.scan("mail me at a.b@aldi.example or DE89 3704 0044 0532 0130 00")
+        findings = engine.scan("mail me at a.b@contoso.example or DE89 3704 0044 0532 0130 00")
         types = {f.info_type for f in findings}
         self.assertIn("email", types)
         self.assertIn("iban", types)
@@ -96,10 +96,10 @@ class DlpEngineTests(unittest.TestCase):
 
     def test_confidential_redacts(self):
         engine = DlpEngine(_policy())
-        result = engine.inspect("contact a.b@aldi.example", "confidential")
+        result = engine.inspect("contact a.b@contoso.example", "confidential")
         self.assertEqual(result.verdict, DlpVerdict.REDACT)
         self.assertIn("[REDACTED:email]", result.redacted_text)
-        self.assertNotIn("a.b@aldi.example", result.redacted_text)
+        self.assertNotIn("a.b@contoso.example", result.redacted_text)
 
     def test_restricted_blocks(self):
         engine = DlpEngine(_policy())
@@ -109,7 +109,7 @@ class DlpEngineTests(unittest.TestCase):
 
     def test_audit_action_allows_but_reports(self):
         engine = DlpEngine(_policy())
-        result = engine.inspect("ping a.b@aldi.example", "internal")
+        result = engine.inspect("ping a.b@contoso.example", "internal")
         self.assertEqual(result.verdict, DlpVerdict.ALLOW)
         self.assertTrue(result.has_findings)
 
@@ -224,7 +224,7 @@ class GuardPipelineTests(unittest.TestCase):
 
     def test_guard_output_redacts_for_confidential(self):
         result = guard_output(
-            "reach the candidate at a.b@aldi.example",
+            "reach the candidate at a.b@contoso.example",
             identity=RECRUITER,
             agent_id="conversational-interview",
             action="invite",
