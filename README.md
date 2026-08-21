@@ -29,8 +29,7 @@ Powered by **Azure Voice Live**&nbsp; ·&nbsp; persona = one Markdown file&nbsp;
 
 > 🙏 **Built on open source — original repo: [`glejdis/teams-avatar-bot`](https://github.com/glejdis/teams-avatar-bot).**
 > The `graph_bot` transport is derived from the Microsoft Graph **EchoBot** community sample
-> ([microsoft-graph-comms-samples](https://github.com/microsoftgraph/microsoft-graph-comms-samples/tree/master/Samples/PublicSamples/EchoBot))
-> by [@bcage29](https://github.com/bcage29) & [@brwilkinson](https://github.com/brwilkinson), MIT-licensed, and
+> ([microsoft-graph-comms-samples](https://github.com/microsoftgraph/microsoft-graph-comms-samples/tree/master/Samples/PublicSamples/EchoBot)), MIT-licensed, and
 > vendored here as the [`bot/`](#repo-layout) submodule. Full credits in [Acknowledgements](#acknowledgements).
 
 > **ℹ️ It's a platform, not an HR app.** It ships with **Lisa, an HR screener** as the worked
