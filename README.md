@@ -39,6 +39,16 @@ Powered by **Azure Voice Live**&nbsp; ·&nbsp; persona = one Markdown file&nbsp;
 
 ---
 
+<div align="center">
+
+<img src="docs/images/teams-avatar-live-demo.png" alt="Lisa, the avatar agent, live in a Microsoft Teams meeting" width="900" />
+
+<sub><b>Lisa in action</b> — the avatar agent joined as a first-class Teams participant, talking and listening live over Azure Voice Live.</sub>
+
+</div>
+
+---
+
 ## Why this repo?
 
 Most "AI agent" projects hand you a chat box. **This one joins the meeting.** 🧑‍💻 ➡️ 🧑‍💼
