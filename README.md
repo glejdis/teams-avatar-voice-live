@@ -266,6 +266,8 @@ Markdown file. The content in `hosted-agent/personas/lisa.md` is deliberately
 verbose so it works out of the box; if you write a tighter generic persona,
 please send it in.
 
+- 🙋 **Need help or have a question?** See **[SUPPORT.md](SUPPORT.md)** for where
+  to file issues and get help.
 - 🔒 **Found a security issue?** Please follow **[SECURITY.md](SECURITY.md)** —
   don't open a public issue.
 
