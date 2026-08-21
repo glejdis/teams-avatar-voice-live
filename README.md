@@ -49,9 +49,11 @@ Powered by **Azure Voice Live**&nbsp; ·&nbsp; persona = one Markdown file&nbsp;
 
 **▶️ Watch the demo** — Lisa runs a full FreshMart HR screening in a live Teams call:
 
-<video src="https://github.com/glejdis/teams-avatar-voice-live/raw/main/docs/media/teams-avatar-demo.mp4" poster="https://github.com/glejdis/teams-avatar-voice-live/raw/main/docs/media/teams-avatar-demo-poster.jpg" controls muted width="900"></video>
+<a href="https://github.com/glejdis/teams-avatar-voice-live/blob/main/docs/media/teams-avatar-demo.mp4">
+  <img src="docs/media/teams-avatar-demo-thumb.jpg" width="900" alt="Watch the Teams Avatar Voice Live demo" />
+</a>
 
-<sub>Player not loading? <a href="https://github.com/glejdis/teams-avatar-voice-live/raw/main/docs/media/teams-avatar-demo.mp4">Open the video directly</a>.</sub>
+<sub>▶️ Click to play in GitHub's built-in video player — or <a href="https://github.com/glejdis/teams-avatar-voice-live/raw/main/docs/media/teams-avatar-demo.mp4">download the MP4</a>.</sub>
 
 </div>
 
