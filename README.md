@@ -45,6 +45,14 @@ Powered by **Azure Voice Live**&nbsp; ·&nbsp; persona = one Markdown file&nbsp;
 
 <sub><b>Lisa in action</b> — the avatar agent joined as a first-class Teams participant, talking and listening live over Azure Voice Live.</sub>
 
+<br /><br />
+
+**▶️ Watch the demo** — Lisa runs a full FreshMart HR screening in a live Teams call:
+
+<video src="https://github.com/glejdis/teams-avatar-voice-live/raw/main/docs/media/teams-avatar-demo.mp4" poster="https://github.com/glejdis/teams-avatar-voice-live/raw/main/docs/media/teams-avatar-demo-poster.jpg" controls muted width="900"></video>
+
+<sub>Player not loading? <a href="https://github.com/glejdis/teams-avatar-voice-live/raw/main/docs/media/teams-avatar-demo.mp4">Open the video directly</a>.</sub>
+
 </div>
 
 ---
